@@ -747,94 +747,105 @@ This helps identify which keywords from the job posting are in your resume."
             </div>
 
             {/* AI Insights - Basic Skills & Advanced Skills (Locked) */}
-            {aiAnalysis && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-6 mt-8"
-              >
-                {/* Basic Skills Section */}
-                <div className="bg-card border border-border rounded-2xl p-6">
-                  <h3 className="font-semibold flex items-center gap-2 mb-4">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    Basic Skills Found
-                  </h3>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {aiAnalysis.basicSkillsFound && aiAnalysis.basicSkillsFound.length > 0 ? (
-                      aiAnalysis.basicSkillsFound.map((skill: string, idx: number) => (
-                        <span key={idx} className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-sm">
-                          {skill}
-                        </span>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No basic skills detected.</p>
-                    )}
-                  </div>
-
-                  {aiAnalysis.missingAdvancedSkills && aiAnalysis.missingAdvancedSkills.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium mb-2 text-amber-600">Consider Adding:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {aiAnalysis.missingAdvancedSkills.slice(0, 3).map((skill: string, idx: number) => (
-                          <span key={idx} className="px-2 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded text-xs">
-                            + {skill}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+            {/* AI Insights - Basic Skills & Advanced Skills (Locked) */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6 mt-8"
+            >
+              {/* Basic Skills Section - Always Visible */}
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <h3 className="font-semibold flex items-center gap-2 mb-4">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  Basic Skills Found
+                </h3>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {aiAnalysis && aiAnalysis.basicSkillsFound && aiAnalysis.basicSkillsFound.length > 0 ? (
+                    aiAnalysis.basicSkillsFound.map((skill: string, idx: number) => (
+                      <span key={idx} className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-sm">
+                        {skill}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      {aiAnalysis ? "No basic skills detected." : "Analyze your resume to reveal skills."}
+                    </p>
                   )}
                 </div>
 
-                {/* Advanced Keywords Section (Locked) */}
-                <div
-                  className={cn(
-                    "bg-card border border-border rounded-2xl p-6 relative overflow-hidden transition-all",
-                    !isPremium && "cursor-pointer group hover:border-primary/50"
-                  )}
-                  onClick={() => !isPremium && setShowSubscription(true)}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold flex items-center gap-2">
-                      <Zap className="w-5 h-5 text-purple-500" />
-                      Advanced Keywords
-                    </h3>
-                    <Lock className="w-4 h-4 text-muted-foreground" />
-                  </div>
-
-                  {/* Content - Blurred if not premium */}
-                  <div className={cn("relative", !isPremium && "filter blur-sm select-none opacity-50")}>
+                {aiAnalysis && aiAnalysis.missingAdvancedSkills && aiAnalysis.missingAdvancedSkills.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium mb-2 text-amber-600">Consider Adding:</h4>
                     <div className="flex flex-wrap gap-2">
-                      {(isPremium && aiAnalysis?.missingAdvancedSkills
-                        ? aiAnalysis.missingAdvancedSkills
-                        : ['Systems Design', 'Microservices', 'Cloud Architecture', 'CI/CD Pipelines', 'Kubernetes', 'GraphQL', 'Machine Learning']
-                      ).map((sk: string, i: number) => (
-                        <span key={i} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-sm">
-                          {sk}
+                      {aiAnalysis.missingAdvancedSkills.slice(0, 3).map((skill: string, idx: number) => (
+                        <span key={idx} className="px-2 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded text-xs">
+                          + {skill}
                         </span>
                       ))}
                     </div>
-                    {!isPremium && (
-                      <div className="mt-4 space-y-2">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                      </div>
-                    )}
                   </div>
+                )}
+              </div>
 
-                  {/* Lock Overlay - Only show if NOT premium */}
-                  {!isPremium && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/10 backdrop-blur-[1px] group-hover:bg-background/20 transition-all">
-                      <div className="bg-background/80 backdrop-blur-md p-4 rounded-full shadow-lg border border-border">
-                        <Lock className="w-6 h-6 text-primary" />
-                      </div>
-                      <p className="mt-3 font-medium bg-background/80 px-3 py-1 rounded-full text-sm">
-                        Unlock Advanced Analysis
-                      </p>
-                    </div>
-                  )}
+              {/* Advanced Keywords Section (Locked) */}
+              <div
+                className="bg-card border border-border rounded-2xl p-6 relative overflow-hidden cursor-pointer group transition-all hover:border-primary/50"
+                onClick={() => setShowSubscription(true)}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-purple-500" />
+                    Advanced Keywords
+                  </h3>
+                  <Lock className="w-4 h-4 text-muted-foreground" />
                 </div>
-              </motion.div>
-            )}
+
+                {/* Blurred Content */}
+                <div className="filter blur-sm select-none opacity-50 relative">
+                  <div className="flex flex-wrap gap-2">
+                    {['Systems Design', 'Microservices', 'Cloud Architecture', 'CI/CD Pipelines', 'Kubernetes', 'GraphQL', 'Machine Learning'].map((sk, i) => (
+                      <span key={i} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-sm">
+                        {sk}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                  </div>
+                </div>
+
+                {/* Lock Overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/10 backdrop-blur-[1px] group-hover:bg-background/20 transition-all">
+                  <div className="bg-background/80 backdrop-blur-md p-4 rounded-full shadow-lg border border-border">
+                    <Lock className="w-6 h-6 text-primary" />
+                  </div>
+                  <p className="mt-3 font-medium bg-background/80 px-3 py-1 rounded-full text-sm">
+                    Unlock Advanced Analysis
+                  </p>
+                </div>
+              </div>
+
+              {/* Premium QR Code Section */}
+              {!isPremium && (
+                <div
+                  className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-6 text-center cursor-pointer hover:shadow-lg transition-all"
+                  onClick={() => navigate('/payment')}
+                >
+                  <div className="mb-4 bg-white p-4 rounded-xl inline-block shadow-sm">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(window.location.origin + '/payment')}`}
+                      alt="Scan to Pay"
+                      className="w-32 h-32 mx-auto"
+                    />
+                  </div>
+                  <h3 className="font-semibold text-lg mb-2">Scan or Click to Upgrade</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Unlock full AI analysis and premium features instantly
+                  </p>
+                </div>
+              )}
+            </motion.div>
           </motion.div>
 
           {/* Subscription Dialog */}

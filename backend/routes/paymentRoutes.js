@@ -1,79 +1,64 @@
 import express from 'express';
-import Razorpay from 'razorpay';
-import crypto from 'crypto';
+import Stripe from 'stripe';
 import User from '../models/User.js';
 
 const router = express.Router();
 
-// Initialize Razorpay
-// Note: In production, these should be in environment variables
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_YourKeyHere',
-    key_secret: process.env.RAZORPAY_KEY_SECRET || 'YourSecretHere',
+// Initialize Stripe
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2022-11-15',
 });
 
-// Get Razorpay Key ID
-router.get('/key', (req, res) => {
-    res.json({ key: process.env.RAZORPAY_KEY_ID });
-});
-
-// Create Order
-router.post('/create-order', async (req, res) => {
+// Create Payment Intent
+router.post('/create-payment-intent', async (req, res) => {
     try {
         const { amount = 499 } = req.body;
 
-        const options = {
-            amount: amount * 100, // amount in paise
-            currency: "INR",
-            receipt: "receipt_" + Date.now(),
-        };
+        // Create a PaymentIntent with the order amount and currency
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: amount * 100, // amount in cents/paise
+            currency: "inr",
+            automatic_payment_methods: {
+                enabled: true,
+            },
+            metadata: {
+                integration_check: 'accept_a_payment',
+            },
+        });
 
-        const order = await razorpay.orders.create(options);
-
-        if (!order) {
-            return res.status(500).send("Error creating order");
-        }
-
-        res.json(order);
+        res.json({
+            clientSecret: paymentIntent.client_secret,
+        });
     } catch (error) {
-        console.error("Error creating order:", error);
-        res.status(500).send("Error creating order");
+        console.error("Error creating payment intent:", error);
+        res.status(500).json({ error: error.message });
     }
 });
 
-// Verify Payment
+// Verify Payment and Update User
 router.post('/verify-payment', async (req, res) => {
     try {
-        const {
-            razorpay_order_id,
-            razorpay_payment_id,
-            razorpay_signature,
-            userId
-        } = req.body;
+        const { paymentIntentId, userId } = req.body;
 
-        const body = razorpay_order_id + "|" + razorpay_payment_id;
+        if (!paymentIntentId || !userId) {
+            return res.status(400).json({ success: false, message: "Missing required fields" });
+        }
 
-        const expectedSignature = crypto
-            .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-            .update(body.toString())
-            .digest("hex");
+        // Retrieve the PaymentIntent to verify status
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-        const isAuthentic = expectedSignature === razorpay_signature;
-
-        if (isAuthentic) {
-            // Update user premium status
-            if (userId) {
-                await User.findByIdAndUpdate(userId, { isPremium: true });
-            }
+        if (paymentIntent.status === 'succeeded') {
+            // Payment is successful, update user
+            await User.findByIdAndUpdate(userId, { isPremium: true });
 
             res.json({
                 success: true,
-                message: "Payment verified successfully"
+                message: "Payment verified and premium activated"
             });
         } else {
             res.status(400).json({
                 success: false,
-                message: "Invalid payment signature"
+                message: `Payment status is ${paymentIntent.status}`
             });
         }
     } catch (error) {
