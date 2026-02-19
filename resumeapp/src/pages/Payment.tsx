@@ -213,7 +213,7 @@ const Payment = () => {
                                     <TabsContent value="upi" className="text-center space-y-6 py-4">
                                         <div className="bg-white p-6 rounded-xl inline-block shadow-sm border">
                                             <img
-                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=resumeapp@upi&pn=ResumeApp&am=499.00&cu=INR`}
+                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent("upi://pay?pa=venithaaselvaraj2110@okicici&pn=Venithaa&am=499.00&cu=INR")}&t=${Date.now()}`}
                                                 alt="UPI QR Code"
                                                 className="w-48 h-48 mx-auto"
                                             />
@@ -221,7 +221,10 @@ const Payment = () => {
                                         <div>
                                             <p className="font-semibold text-lg mb-1">Scan to Pay ₹499.00</p>
                                             <p className="text-sm text-muted-foreground">
-                                                Use any UPI app (Google Pay, PhonePe, Paytm) to scan and pay.
+                                                Pay to: <span className="font-medium text-foreground">venithaaselvaraj2110@okicici</span>
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                Name: Venithaa
                                             </p>
                                         </div>
                                         <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 p-3 rounded-lg text-sm">
