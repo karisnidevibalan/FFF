@@ -20,6 +20,7 @@ import Profile from "./pages/Profile";
 import Tips from "./pages/Tips";
 import NotFound from "./pages/NotFound";
 import PublicResume from "./pages/PublicResume";
+import Payment from "./pages/Payment";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,7 @@ const App = () => (
               />
               {/* Public share page - no auth required */}
               <Route path="/share/:shareId" element={<PublicResume />} />
+              <Route path="/payment" element={<Payment />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

@@ -1,11 +1,12 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  Upload, 
-  FileText, 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle, 
+import {
+  Upload,
+  FileText,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
   Sparkles,
   Target,
   TrendingUp,
@@ -17,10 +18,24 @@ import {
   BookOpen,
   User,
   Mail,
-  Phone,
   Star,
-  ListChecks
+  ListChecks,
+  Lock,
+  Crown
 } from 'lucide-react';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+
+import { resumeService } from '@/services/resumeService';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -99,6 +114,22 @@ const ATSChecker: React.FC = () => {
   const [analysisMode, setAnalysisMode] = useState<'general' | 'job'>('general');
   const [file, setFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+  const [showSubscription, setShowSubscription] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkPremium = () => {
+      const premiumStatus = localStorage.getItem('isPremium') === 'true';
+      setIsPremium(premiumStatus);
+    };
+    checkPremium();
+    // Listen for storage events in case it changes in another tab
+    window.addEventListener('storage', checkPremium);
+    return () => window.removeEventListener('storage', checkPremium);
+  }, []);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -110,15 +141,44 @@ const ATSChecker: React.FC = () => {
     }
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const extractTextFromPdf = async (file: File): Promise<string> => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        fullText += pageText + ' ';
+      }
+      return fullText;
+    } catch (error) {
+      console.error('Error extracting text from PDF:', error);
+      throw new Error('Failed to parse PDF');
+    }
+  };
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+    setError(null);
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const uploadedFile = e.dataTransfer.files[0];
-      if (uploadedFile.type === 'text/plain') {
-        setFile(uploadedFile);
+      setFile(uploadedFile);
+
+      if (uploadedFile.type === 'application/pdf') {
+        try {
+          const text = await extractTextFromPdf(uploadedFile);
+          setResumeText(text);
+        } catch (err) {
+          setError('Failed to read PDF file.');
+        }
+      } else {
+        // Fallback or text/plain
         const reader = new FileReader();
         reader.onload = (event) => {
           setResumeText(event.target?.result as string || '');
@@ -128,15 +188,27 @@ const ATSChecker: React.FC = () => {
     }
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null);
     if (e.target.files && e.target.files[0]) {
       const uploadedFile = e.target.files[0];
       setFile(uploadedFile);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setResumeText(event.target?.result as string || '');
-      };
-      reader.readAsText(uploadedFile);
+
+      if (uploadedFile.type === 'application/pdf') {
+        try {
+          const text = await extractTextFromPdf(uploadedFile);
+          setResumeText(text);
+        } catch (err) {
+          setError('Failed to read PDF file.');
+        }
+      } else {
+        // Fallback
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setResumeText(event.target?.result as string || '');
+        };
+        reader.readAsText(uploadedFile);
+      }
     }
   };
 
@@ -144,14 +216,14 @@ const ATSChecker: React.FC = () => {
   const extractKeywords = (text: string): string[] => {
     const lowerText = text.toLowerCase();
     const foundKeywords = new Set<string>();
-    
+
     // Check all industry keywords
     Object.values(industryKeywords).flat().forEach(keyword => {
       if (lowerText.includes(keyword.toLowerCase())) {
         foundKeywords.add(keyword);
       }
     });
-    
+
     // Extract capitalized words (technologies, tools)
     const capitalizedWords = text.match(/\b[A-Z][a-zA-Z]*(?:\.[a-zA-Z]+)?\b/g) || [];
     capitalizedWords.forEach(word => {
@@ -159,7 +231,7 @@ const ATSChecker: React.FC = () => {
         foundKeywords.add(word);
       }
     });
-    
+
     return Array.from(foundKeywords);
   };
 
@@ -174,13 +246,13 @@ const ATSChecker: React.FC = () => {
       /top\s+\d+%?/gi,
       /\d+x/gi,
     ];
-    
+
     const found: string[] = [];
     patterns.forEach(pattern => {
       const matches = text.match(pattern) || [];
       found.push(...matches);
     });
-    
+
     const score = Math.min(found.length * 5, 20);
     return { found: [...new Set(found)].slice(0, 10), score };
   };
@@ -192,7 +264,7 @@ const ATSChecker: React.FC = () => {
       const regex = new RegExp(`\\b${verb}(?:ed|ing|s)?\\b`, 'i');
       return regex.test(lowerText);
     });
-    
+
     const score = Math.min(found.length * 2, 15);
     return { found, score };
   };
@@ -202,7 +274,7 @@ const ATSChecker: React.FC = () => {
     const lowerText = text.toLowerCase();
     const found: string[] = [];
     const missing: string[] = [];
-    
+
     requiredSections.forEach(section => {
       const hasSection = section.patterns.some(pattern => lowerText.includes(pattern.toLowerCase()));
       if (hasSection) {
@@ -211,7 +283,7 @@ const ATSChecker: React.FC = () => {
         missing.push(section.name);
       }
     });
-    
+
     const score = Math.round((found.length / requiredSections.length) * 20);
     return { found, missing, score };
   };
@@ -220,33 +292,33 @@ const ATSChecker: React.FC = () => {
   const checkContactInfo = (text: string): { details: string[], score: number } => {
     const details: string[] = [];
     let score = 0;
-    
+
     if (/[\w.-]+@[\w.-]+\.\w+/.test(text)) {
       details.push('✓ Email address found');
       score += 5;
     } else {
       details.push('✗ Missing email address');
     }
-    
+
     if (/(\+\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/.test(text)) {
       details.push('✓ Phone number found');
       score += 5;
     } else {
       details.push('✗ Missing phone number');
     }
-    
+
     if (/linkedin/i.test(text)) {
       details.push('✓ LinkedIn profile found');
       score += 3;
     } else {
       details.push('○ Consider adding LinkedIn profile');
     }
-    
+
     if (/(?:city|location|address|based in|located)/i.test(text) || /[A-Z][a-z]+,\s*[A-Z]{2}/.test(text)) {
       details.push('✓ Location information found');
       score += 2;
     }
-    
+
     return { details, score };
   };
 
@@ -254,17 +326,17 @@ const ATSChecker: React.FC = () => {
   const checkFormatting = (text: string): { issues: string[], score: number } => {
     const issues: string[] = [];
     let deductions = 0;
-    
+
     if (/[│║┃┆┇┊┋╎╏]/.test(text)) {
       issues.push('Special box-drawing characters detected - may cause parsing issues');
       deductions += 5;
     }
-    
+
     if ((text.match(/[★☆●○◆◇►▶]/g) || []).length > 10) {
       issues.push('Too many decorative symbols - use standard bullets');
       deductions += 3;
     }
-    
+
     const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
     if (wordCount < 150) {
       issues.push(`Resume too short (${wordCount} words) - aim for 400-800 words`);
@@ -273,13 +345,13 @@ const ATSChecker: React.FC = () => {
       issues.push(`Resume may be too long (${wordCount} words) - consider condensing`);
       deductions += 5;
     }
-    
+
     const capsHeaders = (text.match(/^[A-Z][A-Z\s]{3,}$/gm) || []).length;
     if (capsHeaders < 3) {
       issues.push('Consider using clear section headers in caps for better parsing');
       deductions += 2;
     }
-    
+
     const score = Math.max(0, 15 - deductions);
     return { issues, score };
   };
@@ -290,15 +362,15 @@ const ATSChecker: React.FC = () => {
     if (analysisMode === 'job' && !jobDescription.trim()) return;
 
     setIsAnalyzing(true);
-    
+
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     const resumeLower = resumeText.toLowerCase();
-    
+
     const detailedScores: DetailedScore[] = [];
     const suggestions: string[] = [];
     const strengths: string[] = [];
-    
+
     // 1. Contact Information (15 points)
     const contactCheck = checkContactInfo(resumeText);
     detailedScores.push({
@@ -308,7 +380,7 @@ const ATSChecker: React.FC = () => {
       icon: <User className="w-4 h-4" />,
       details: contactCheck.details
     });
-    
+
     // 2. Resume Sections (20 points)
     const sectionCheck = checkSections(resumeText);
     detailedScores.push({
@@ -326,7 +398,7 @@ const ATSChecker: React.FC = () => {
     } else {
       strengths.push('All essential resume sections are present');
     }
-    
+
     // 3. Action Verbs (15 points)
     const actionCheck = checkActionVerbs(resumeText);
     detailedScores.push({
@@ -344,7 +416,7 @@ const ATSChecker: React.FC = () => {
     } else {
       strengths.push(`Strong use of ${actionCheck.found.length} action verbs`);
     }
-    
+
     // 4. Quantifiable Achievements (20 points)
     const quantCheck = checkQuantifiableAchievements(resumeText);
     detailedScores.push({
@@ -362,7 +434,7 @@ const ATSChecker: React.FC = () => {
     } else {
       strengths.push(`${quantCheck.found.length} quantified achievements demonstrate impact`);
     }
-    
+
     // 5. Formatting (15 points)
     const formatCheck = checkFormatting(resumeText);
     detailedScores.push({
@@ -379,12 +451,12 @@ const ATSChecker: React.FC = () => {
     } else {
       strengths.push('Resume format is clean and ATS-friendly');
     }
-    
+
     // 6. Keywords (15 points)
     let keywordScore = 0;
     let matchedKeywords: string[] = [];
     let missingKeywords: string[] = [];
-    
+
     if (analysisMode === 'job' && jobDescription.trim()) {
       const jobKeywords = extractKeywords(jobDescription);
       jobKeywords.forEach(keyword => {
@@ -394,11 +466,11 @@ const ATSChecker: React.FC = () => {
           missingKeywords.push(keyword);
         }
       });
-      
-      keywordScore = jobKeywords.length > 0 
+
+      keywordScore = jobKeywords.length > 0
         ? Math.round((matchedKeywords.length / jobKeywords.length) * 15)
         : 8;
-        
+
       detailedScores.push({
         category: 'Job Keyword Match',
         score: keywordScore,
@@ -409,7 +481,7 @@ const ATSChecker: React.FC = () => {
           matchedKeywords.length > 0 ? `Matched: ${matchedKeywords.slice(0, 5).join(', ')}` : ''
         ].filter(Boolean)
       });
-      
+
       if (missingKeywords.length > 0) {
         suggestions.push(`Add these keywords from job description: ${missingKeywords.slice(0, 5).join(', ')}`);
       }
@@ -420,7 +492,7 @@ const ATSChecker: React.FC = () => {
       const resumeKeywords = extractKeywords(resumeText);
       matchedKeywords = resumeKeywords;
       keywordScore = Math.min(resumeKeywords.length, 15);
-      
+
       detailedScores.push({
         category: 'Industry Keywords',
         score: keywordScore,
@@ -431,14 +503,15 @@ const ATSChecker: React.FC = () => {
           resumeKeywords.length > 0 ? `Including: ${resumeKeywords.slice(0, 5).join(', ')}` : 'Add industry-specific keywords'
         ]
       });
-      
+
       if (resumeKeywords.length < 10) {
         suggestions.push('Add more industry-specific keywords and technical skills');
       } else {
         strengths.push(`Good keyword density with ${resumeKeywords.length} relevant terms`);
       }
     }
-    
+
+    // Calulate local ATS score
     const totalScore = detailedScores.reduce((sum, item) => sum + item.score, 0);
     const maxPossibleScore = detailedScores.reduce((sum, item) => sum + item.maxScore, 0);
     const overallScore = Math.round((totalScore / maxPossibleScore) * 100);
@@ -451,7 +524,21 @@ const ATSChecker: React.FC = () => {
       suggestions: suggestions.slice(0, 8),
       strengths: strengths.slice(0, 5)
     });
-    
+
+    // Call AI Analysis
+    try {
+      const aiResult = await resumeService.analyzeResume(resumeText, 'Frontend Developer');
+      console.log('AI Response:', aiResult);
+      if (aiResult.success) {
+        setAiAnalysis(aiResult.data);
+      } else {
+        setError('AI Analysis failed: ' + (aiResult.message || 'Unknown error'));
+      }
+    } catch (error: any) {
+      console.error("AI Analysis failed", error);
+      setError('Failed to connect to AI service: ' + (error.message || 'Unknown error'));
+    }
+
     setIsAnalyzing(false);
   };
 
@@ -470,6 +557,8 @@ const ATSChecker: React.FC = () => {
 
   const resetAnalysis = () => {
     setResult(null);
+    setAiAnalysis(null);
+    setError(null);
   };
 
   return (
@@ -490,7 +579,7 @@ const ATSChecker: React.FC = () => {
             <span className="gradient-text">ATS Compatibility</span>
           </h1>
           <p className="text-muted-foreground">
-            Get a comprehensive analysis of your resume's ATS compatibility. 
+            Get a comprehensive analysis of your resume's ATS compatibility.
             Check general compatibility or match against a specific job description.
           </p>
         </motion.div>
@@ -609,7 +698,7 @@ Include all sections: Contact Info, Summary, Experience, Education, Skills"
 
             {/* Job Description Input - Only show in job mode */}
             {analysisMode === 'job' && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 className="bg-card border border-border rounded-2xl p-6"
@@ -630,24 +719,155 @@ This helps identify which keywords from the job posting are in your resume."
             )}
 
             {/* Analyze Button */}
-            <Button
-              onClick={analyzeResume}
-              disabled={!resumeText.trim() || (analysisMode === 'job' && !jobDescription.trim()) || isAnalyzing}
-              className="w-full gradient-bg py-6 text-lg"
-            >
-              {isAnalyzing ? (
-                <>
-                  <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  Analyze Resume
-                </>
+            <div className="space-y-4">
+              <Button
+                onClick={() => { setError(null); analyzeResume(); }}
+                disabled={!resumeText.trim() || (analysisMode === 'job' && !jobDescription.trim()) || isAnalyzing}
+                className="w-full gradient-bg py-6 text-lg"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    Analyze Resume
+                  </>
+                )}
+              </Button>
+
+              {error && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                  {error}
+                </div>
               )}
-            </Button>
+            </div>
+
+            {/* AI Insights - Basic Skills & Advanced Skills (Locked) */}
+            {aiAnalysis && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-6 mt-8"
+              >
+                {/* Basic Skills Section */}
+                <div className="bg-card border border-border rounded-2xl p-6">
+                  <h3 className="font-semibold flex items-center gap-2 mb-4">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    Basic Skills Found
+                  </h3>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {aiAnalysis.basicSkillsFound && aiAnalysis.basicSkillsFound.length > 0 ? (
+                      aiAnalysis.basicSkillsFound.map((skill: string, idx: number) => (
+                        <span key={idx} className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-sm">
+                          {skill}
+                        </span>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No basic skills detected.</p>
+                    )}
+                  </div>
+
+                  {aiAnalysis.missingAdvancedSkills && aiAnalysis.missingAdvancedSkills.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2 text-amber-600">Consider Adding:</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {aiAnalysis.missingAdvancedSkills.slice(0, 3).map((skill: string, idx: number) => (
+                          <span key={idx} className="px-2 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded text-xs">
+                            + {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Advanced Keywords Section (Locked) */}
+                <div
+                  className={cn(
+                    "bg-card border border-border rounded-2xl p-6 relative overflow-hidden transition-all",
+                    !isPremium && "cursor-pointer group hover:border-primary/50"
+                  )}
+                  onClick={() => !isPremium && setShowSubscription(true)}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-purple-500" />
+                      Advanced Keywords
+                    </h3>
+                    <Lock className="w-4 h-4 text-muted-foreground" />
+                  </div>
+
+                  {/* Content - Blurred if not premium */}
+                  <div className={cn("relative", !isPremium && "filter blur-sm select-none opacity-50")}>
+                    <div className="flex flex-wrap gap-2">
+                      {(isPremium && aiAnalysis?.missingAdvancedSkills
+                        ? aiAnalysis.missingAdvancedSkills
+                        : ['Systems Design', 'Microservices', 'Cloud Architecture', 'CI/CD Pipelines', 'Kubernetes', 'GraphQL', 'Machine Learning']
+                      ).map((sk: string, i: number) => (
+                        <span key={i} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-sm">
+                          {sk}
+                        </span>
+                      ))}
+                    </div>
+                    {!isPremium && (
+                      <div className="mt-4 space-y-2">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Lock Overlay - Only show if NOT premium */}
+                  {!isPremium && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/10 backdrop-blur-[1px] group-hover:bg-background/20 transition-all">
+                      <div className="bg-background/80 backdrop-blur-md p-4 rounded-full shadow-lg border border-border">
+                        <Lock className="w-6 h-6 text-primary" />
+                      </div>
+                      <p className="mt-3 font-medium bg-background/80 px-3 py-1 rounded-full text-sm">
+                        Unlock Advanced Analysis
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
           </motion.div>
+
+          {/* Subscription Dialog */}
+          <Dialog open={showSubscription} onOpenChange={setShowSubscription}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <div className="mx-auto bg-primary/10 p-4 rounded-full mb-4">
+                  <Crown className="w-10 h-10 text-primary" />
+                </div>
+                <DialogTitle className="text-center text-xl">Upgrade to Premium</DialogTitle>
+                <DialogDescription className="text-center">
+                  Unlock advanced keyword analysis, industry-specific suggestions, and tailored resume improvements.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="flex items-center gap-3 p-3 border rounded-lg bg-card">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <span className="text-sm font-medium">Advanced Keyword Gap Analysis</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 border rounded-lg bg-card">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <span className="text-sm font-medium">AI-Powered Rewrite Suggestions</span>
+                </div>
+                <div className="flex items-center gap-3 p-3 border rounded-lg bg-card">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <span className="text-sm font-medium">Unlimited Resume Scans</span>
+                </div>
+              </div>
+              <Button className="w-full gradient-bg" onClick={() => navigate('/payment')}>
+                Upgrade Now - ₹499
+              </Button>
+            </DialogContent>
+          </Dialog>
 
           {/* Results Section */}
           <motion.div
@@ -714,8 +934,8 @@ This helps identify which keywords from the job posting are in your resume."
                             {item.score}/{item.maxScore}
                           </span>
                         </div>
-                        <Progress 
-                          value={(item.score / item.maxScore) * 100} 
+                        <Progress
+                          value={(item.score / item.maxScore) * 100}
                           className="h-2"
                         />
                         <div className="text-xs text-muted-foreground">
@@ -768,7 +988,7 @@ This helps identify which keywords from the job posting are in your resume."
                 {(result.matchedKeywords.length > 0 || result.missingKeywords.length > 0) && (
                   <div className="bg-card border border-border rounded-2xl p-6">
                     <h3 className="font-semibold mb-4">Keyword Analysis</h3>
-                    
+
                     {result.matchedKeywords.length > 0 && (
                       <div className="mb-4">
                         <p className="text-sm font-medium text-green-600 dark:text-green-400 mb-2">
@@ -786,7 +1006,7 @@ This helps identify which keywords from the job posting are in your resume."
                         </div>
                       </div>
                     )}
-                    
+
                     {result.missingKeywords.length > 0 && (
                       <div>
                         <p className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
@@ -814,7 +1034,7 @@ This helps identify which keywords from the job posting are in your resume."
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Ready to Analyze</h3>
                 <p className="text-muted-foreground max-w-sm mb-6">
-                  {analysisMode === 'general' 
+                  {analysisMode === 'general'
                     ? "Paste your resume to get a comprehensive ATS compatibility analysis with actionable suggestions."
                     : "Paste your resume and job description to see how well they match and get keyword recommendations."}
                 </p>

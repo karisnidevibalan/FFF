@@ -146,4 +146,28 @@ export const resumeService = {
       throw error;
     }
   },
+  // Analyze Resume
+  analyzeResume: async (resumeText: string, jobRole: string = 'Frontend Developer') => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/ai/analyze-resume`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ resumeText, jobRole }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to analyze resume');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Analyze resume error:', error);
+      throw error;
+    }
+  },
 };
