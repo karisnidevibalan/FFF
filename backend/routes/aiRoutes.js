@@ -1,14 +1,84 @@
 import express from 'express';
-import Groq from 'groq-sdk';
+// import Groq from 'groq-sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 const router = express.Router();
 
+// Gemini Initialization
+const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+const genAI = new GoogleGenerativeAI(apiKey);
+
+// Helper for generating content with a simpler interface and robust fallback
+const generateContent = async (prompt) => {
+  const modelsToTry = [
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+    "gemini-1.5-pro",
+    "gemini-pro"
+  ];
+
+  let lastError;
+
+  for (const modelName of modelsToTry) {
+    try {
+      console.log(`Attempting Gemini model: ${modelName}...`);
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+      console.log(`✅ Success with model: ${modelName}`);
+      return text;
+    } catch (error) {
+      lastError = error;
+      console.error(`❌ Error with model ${modelName}:`, error.message);
+
+      // If it's an Auth error (400/401/403), don't bother trying other models with same key
+      if (error.status === 400 || error.status === 401 || error.status === 403) {
+        throw error;
+      }
+      // If 404, continue to next model
+    }
+  }
+
+  throw lastError;
+};
+
+/* 
+// Previous Groq Initialization
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
+*/
+
+// Helper to clean JSON from Gemini response
+const extractJson = (text) => {
+  try {
+    let cleanJson = text.trim();
+    if (cleanJson.startsWith('```json')) {
+      cleanJson = cleanJson.slice(7);
+    }
+    if (cleanJson.startsWith('```')) {
+      cleanJson = cleanJson.slice(3);
+    }
+    if (cleanJson.endsWith('```')) {
+      cleanJson = cleanJson.slice(0, -3);
+    }
+    cleanJson = cleanJson.trim();
+
+    // Attempt to parse to see if it's valid
+    return JSON.parse(cleanJson);
+  } catch (e) {
+    // If direct parse fails, try regex extraction
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    throw e;
+  }
+};
 
 // Parse resume text using AI
 router.post('/parse-resume', async (req, res) => {
@@ -28,7 +98,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no explanations, just the JSON o
 
 Resume Text:
 """
-${text.substring(0, 8000)}
+${text.substring(0, 10000)}
 """
 
 Extract and return this exact JSON structure:
@@ -81,52 +151,11 @@ Rules:
 4. Parse dates as found (don't change format)
 5. Return ONLY the JSON object, nothing else`;
 
-    const completion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.1,
-      max_tokens: 4000,
-    });
-
-    const responseText = completion.choices[0]?.message?.content || '';
-    
-    // Try to parse the JSON response
-    let parsedData;
-    try {
-      // Clean the response - remove markdown code blocks if present
-      let cleanJson = responseText.trim();
-      if (cleanJson.startsWith('```json')) {
-        cleanJson = cleanJson.slice(7);
-      }
-      if (cleanJson.startsWith('```')) {
-        cleanJson = cleanJson.slice(3);
-      }
-      if (cleanJson.endsWith('```')) {
-        cleanJson = cleanJson.slice(0, -3);
-      }
-      cleanJson = cleanJson.trim();
-      
-      parsedData = JSON.parse(cleanJson);
-    } catch (parseError) {
-      console.error('JSON parse error:', parseError);
-      console.log('Raw response:', responseText);
-      
-      // Try to extract JSON from the response
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        parsedData = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error('Failed to parse AI response');
-      }
-    }
+    const responseText = await generateContent(prompt);
+    const parsedData = extractJson(responseText);
 
     // Ensure all required fields exist
-    const result = {
+    const finalResult = {
       fullName: parsedData.fullName || '',
       email: parsedData.email || '',
       phone: parsedData.phone || '',
@@ -162,17 +191,109 @@ Rules:
 
     res.status(200).json({
       success: true,
-      data: result,
+      data: finalResult,
     });
 
   } catch (error) {
-    console.error('AI Parse Error:', error);
+    console.error('Gemini Parse Error:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to parse resume',
+      message: error.message || 'Failed to parse resume with Gemini',
     });
   }
 });
+
+// Improve specific content (bullet points, descriptions)
+router.post('/improve-content', async (req, res) => {
+  try {
+    const { text, type, jobTitle } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ success: false, message: 'Text is required' });
+    }
+
+    const prompt = `You are a professional resume writer. Improve the following ${type || 'content'} for a ${jobTitle || 'professional'} resume. 
+    Make it more impactful, use strong action verbs, and quantify achievements where possible. 
+    Keep the length similar to the original.
+    
+    ORIGINAL TEXT:
+    "${text}"
+    
+    IMPROVED TEXT (Return ONLY the improved text, no quotes, no explanations):`;
+
+    const resultText = await generateContent(prompt);
+    res.status(200).json({
+      success: true,
+      data: resultText.trim(),
+    });
+  } catch (error) {
+    console.error('Gemini Improve Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Generate professional summary
+router.post('/generate-summary', async (req, res) => {
+  try {
+    const { experiences, skills, jobTitle } = req.body;
+
+    const prompt = `Generate a compelling professional summary for a ${jobTitle || 'professional'} resume.
+    Key Experiences: ${JSON.stringify(experiences)}
+    Key Skills: ${skills?.join(', ')}
+    
+    Rules:
+    1. Keep it to 3-4 impactful sentences.
+    2. Focus on value proposition and key achievements.
+    3. Return ONLY the summary text.`;
+
+    const resultText = await generateContent(prompt);
+    res.status(200).json({
+      success: true,
+      data: resultText.trim(),
+    });
+  } catch (error) {
+    console.error('Gemini Summary Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Suggest skills
+router.post('/suggest-skills', async (req, res) => {
+  try {
+    const { jobTitle, existingSkills } = req.body;
+
+    const prompt = `As an expert career coach, suggest 10 relevant hard and soft skills for a ${jobTitle} role.
+    Current skills to avoid repeating: ${existingSkills?.join(', ')}
+    
+    Return ONLY a JSON array of strings:
+    ["Skill 1", "Skill 2", ...]`;
+
+    const responseText = await generateContent(prompt);
+    const trimmedResponse = responseText.trim();
+
+    let skills = [];
+    try {
+      const match = trimmedResponse.match(/\[.*\]/s);
+      skills = JSON.parse(match ? match[0] : trimmedResponse);
+    } catch (e) {
+      // Fallback for non-JSON response
+      skills = trimmedResponse.split('\n')
+        .map(s => s.replace(/^\d+\.\s*/, '').replace(/^-\s*/, '').trim())
+        .filter(s => s && s.length > 2)
+        .slice(0, 10);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: skills,
+    });
+  } catch (error) {
+    console.error('Gemini Skills Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// =========== YOUR ENDPOINTS (HR Dashboard + Job Matcher) ===========
 
 // Analyze single resume against job role (for HR Dashboard)
 router.post('/analyze-candidate', async (req, res) => {
@@ -203,45 +324,26 @@ Resume:
 ${resumeText.substring(0, 6000)}
 """
 
-IMPORTANT: Return ONLY valid JSON, no markdown, no explanations.
-
-Analyze and return this exact JSON structure:
+Analyze and return ONLY valid JSON in this exact format:
 {
-  "candidateName": "Full name from resume",
-  "email": "Email if found",
-  "phone": "Phone if found",
+  "name": "Candidate's full name",
+  "email": "candidate@email.com",
+  "phone": "phone number",
   "matchScore": 75,
-  "experience": "X years",
-  "education": "Highest degree",
-  "currentRole": "Current/recent job title",
   "skills": ["skill1", "skill2", "skill3"],
-  "matchingSkills": ["skills that match the job"],
-  "missingSkills": ["skills required but not found"],
-  "strengths": ["key strengths for this role"],
-  "concerns": ["potential concerns or gaps"],
-  "recommendation": "Short recommendation (1-2 sentences)"
+  "experience": "X years in relevant field",
+  "education": "Highest degree and institution",
+  "missingSkills": ["missing skill 1", "missing skill 2"],
+  "summary": "Brief 2-sentence assessment of the candidate"
 }
 
 Rules:
-1. matchScore should be 0-100 based on how well the candidate fits the role
-2. Consider skills match, experience level, education relevance
-3. Be realistic with scores - 90+ should be exceptional matches only
-4. List actual skills found in resume, not generic ones
-5. Return ONLY JSON`;
+1. matchScore should be 0-100 based on how well candidate matches the job role
+2. Extract actual skills mentioned in the resume
+3. Be realistic with scoring
+4. If information is not found, use "Not specified"`;
 
-    const completion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.2,
-      max_tokens: 2000,
-    });
-
-    const responseText = completion.choices[0]?.message?.content || '';
+    const responseText = await generateContent(prompt);
     
     let parsedData;
     try {
@@ -262,21 +364,7 @@ Rules:
 
     res.status(200).json({
       success: true,
-      data: {
-        name: parsedData.candidateName || 'Unknown',
-        email: parsedData.email || '',
-        phone: parsedData.phone || '',
-        matchScore: Math.min(100, Math.max(0, parseInt(parsedData.matchScore) || 50)),
-        experience: parsedData.experience || 'Not specified',
-        education: parsedData.education || 'Not specified',
-        currentRole: parsedData.currentRole || '',
-        skills: parsedData.skills || [],
-        matchingSkills: parsedData.matchingSkills || [],
-        missingSkills: parsedData.missingSkills || [],
-        strengths: parsedData.strengths || [],
-        concerns: parsedData.concerns || [],
-        recommendation: parsedData.recommendation || '',
-      },
+      candidate: parsedData,
     });
 
   } catch (error) {
@@ -288,19 +376,17 @@ Rules:
   }
 });
 
-// Generate personalized career objective/summary
-router.post('/generate-summary', async (req, res) => {
+// Generate 3 unique career objective options
+router.post('/generate-summary-options', async (req, res) => {
   try {
-    const { 
-      fullName, 
-      skills, 
-      experiences, 
-      education, 
+    const {
       targetRole,
-      tone // professional, creative, confident, friendly
+      skills,
+      experiences,
+      education,
+      tone
     } = req.body;
 
-    // Build context from user data
     const skillsList = skills?.map(s => s.name || s).join(', ') || '';
     
     const experienceContext = experiences?.length > 0 
@@ -336,44 +422,26 @@ TONE: ${toneInstruction}
 
 IMPORTANT RULES:
 1. Each summary must be 2-4 sentences (50-100 words)
-2. DO NOT include the candidate's name in the summary - the name is already on the resume header
-3. Make each option DISTINCTLY DIFFERENT in approach:
+2. DO NOT include the candidate's name in the summary
+3. Make each option DISTINCTLY DIFFERENT:
    - Option 1: Focus on SKILLS and TECHNICAL expertise
    - Option 2: Focus on EXPERIENCE and ACHIEVEMENTS  
    - Option 3: Focus on GOALS and VALUE proposition
-4. Use SPECIFIC details from the profile (company names, skill names, degree)
-5. DO NOT use generic phrases like "seeking opportunities" or "looking for challenging role"
+4. Use SPECIFIC details from the profile
+5. DO NOT use generic phrases like "seeking opportunities"
 6. DO NOT start with "I am" - use third person or direct statements
 7. Make it sound human, not robotic
-8. Include measurable achievements if experience is provided
-9. Tailor it specifically for the target role if provided
 
-Return ONLY valid JSON in this format:
+Return ONLY valid JSON:
 {
   "summaries": [
-    {
-      "type": "skills-focused",
-      "text": "First personalized summary..."
-    },
-    {
-      "type": "experience-focused", 
-      "text": "Second personalized summary..."
-    },
-    {
-      "type": "goals-focused",
-      "text": "Third personalized summary..."
-    }
+    { "type": "skills-focused", "text": "First summary..." },
+    { "type": "experience-focused", "text": "Second summary..." },
+    { "type": "goals-focused", "text": "Third summary..." }
   ]
 }`;
 
-    const completion = await groq.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.8, // Higher temperature for more creativity/uniqueness
-      max_tokens: 1500,
-    });
-
-    const responseText = completion.choices[0]?.message?.content || '';
+    const responseText = await generateContent(prompt);
     
     let parsedData;
     try {
@@ -418,7 +486,6 @@ router.post('/match-job', async (req, res) => {
       });
     }
 
-    // Prepare resume context
     const skills = resumeData?.skills?.map(s => s.name || s).join(', ') || '';
     const experience = resumeData?.experience?.map(exp => 
       `${exp.position || exp.title} at ${exp.company}: ${exp.description || ''}`
@@ -428,7 +495,7 @@ router.post('/match-job', async (req, res) => {
     ).join('\n') || '';
     const summary = resumeData?.personalInfo?.summary || '';
 
-    const prompt = `You are an expert ATS (Applicant Tracking System) and HR recruiter. Analyze how well this candidate's resume matches the job description.
+    const prompt = `You are an expert ATS and HR recruiter. Analyze how well this candidate's resume matches the job description.
 
 JOB DESCRIPTION:
 """
@@ -443,9 +510,7 @@ ${experience}
 - Education:
 ${education}
 
-TASK: Analyze the match and return a JSON response.
-
-Return ONLY valid JSON in this exact format:
+Return ONLY valid JSON:
 {
   "overallScore": 75,
   "matchedSkills": ["skill1", "skill2"],
@@ -456,45 +521,19 @@ Return ONLY valid JSON in this exact format:
     "required": "3+ years",
     "candidateHas": "2 years",
     "match": false,
-    "comment": "Brief comment about experience match"
+    "comment": "Brief comment"
   },
   "educationAnalysis": {
     "required": "Bachelor's degree",
     "candidateHas": "Bachelor's in CS",
     "match": true
   },
-  "suggestions": [
-    "Specific suggestion 1 to improve match",
-    "Specific suggestion 2",
-    "Specific suggestion 3"
-  ],
-  "strengths": [
-    "Strength 1 that matches JD",
-    "Strength 2"
-  ],
-  "keywordDensity": {
-    "technical": 60,
-    "soft": 40
-  },
-  "overallVerdict": "Good match with minor gaps in cloud experience"
-}
+  "suggestions": ["Suggestion 1", "Suggestion 2", "Suggestion 3"],
+  "strengths": ["Strength 1", "Strength 2"],
+  "overallVerdict": "Good match with minor gaps"
+}`;
 
-RULES:
-1. overallScore should be 0-100 based on realistic matching
-2. Extract ACTUAL skills mentioned in JD, not generic ones
-3. Compare with resume skills precisely
-4. Suggestions must be ACTIONABLE and SPECIFIC
-5. Be realistic - don't inflate scores
-6. Consider both hard skills and soft skills`;
-
-    const completion = await groq.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.3, // Lower for more consistent analysis
-      max_tokens: 2000,
-    });
-
-    const responseText = completion.choices[0]?.message?.content || '';
+    const responseText = await generateContent(prompt);
     
     let parsedData;
     try {

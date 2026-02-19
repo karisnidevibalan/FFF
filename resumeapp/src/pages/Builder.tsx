@@ -536,7 +536,7 @@ const Builder: React.FC = () => {
     try {
       const { personalInfo, experience, skills, education } = resumeData;
       
-      const response = await fetch(`${API_URL}/ai/generate-summary`, {
+      const response = await fetch(`${API_URL}/ai/generate-summary-options`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
