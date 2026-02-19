@@ -129,6 +129,63 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Google Auth
+router.post('/google', async (req, res) => {
+  try {
+    const { email, name, googleId, photoURL } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required from Google account',
+      });
+    }
+
+    // Find user by email
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Create new user if doesn't exist (Sign up with Google)
+      // We'll generate a random password since they use Google
+      const salt = await bcryptjs.genSalt(10);
+      const randomPassword = Math.random().toString(36).slice(-12);
+      const hashedPassword = await bcryptjs.hash(randomPassword, salt);
+
+      user = await User.create({
+        name: name || email.split('@')[0],
+        email,
+        password: hashedPassword,
+        googleId: googleId || '',
+        photoURL: photoURL || '',
+      });
+    }
+
+    // Create JWT token
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // Remove password from response
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(200).json({
+      success: true,
+      message: 'Google login successful',
+      token,
+      user: userResponse,
+    });
+  } catch (error) {
+    console.error('Google Auth error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error',
+    });
+  }
+});
+
 // Get user profile
 router.get('/profile/:userId', async (req, res) => {
   try {

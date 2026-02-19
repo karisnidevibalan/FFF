@@ -59,6 +59,35 @@ export const authService = {
     }
   },
 
+  googleLogin: async (userData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Google login failed');
+      }
+
+      // Store token in localStorage
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Google login error:', error);
+      throw error;
+    }
+  },
+
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
