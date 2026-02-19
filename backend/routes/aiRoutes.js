@@ -1,53 +1,58 @@
 import express from 'express';
-// import Groq from 'groq-sdk';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 const router = express.Router();
 
-// Gemini Initialization
-const apiKey = (process.env.GEMINI_API_KEY || '').trim();
-const genAI = new GoogleGenerativeAI(apiKey);
+// Groq Initialization
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
-// Helper for generating content with a simpler interface and robust fallback
+// Helper for generating content using Groq
 const generateContent = async (prompt) => {
   const modelsToTry = [
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
-    "gemini-pro"
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "mixtral-8x7b-32768"
   ];
 
   let lastError;
 
   for (const modelName of modelsToTry) {
     try {
-      console.log(`Attempting Gemini model: ${modelName}...`);
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
+      console.log(`Attempting Groq model: ${modelName}...`);
+      const chatCompletion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        model: modelName,
+        temperature: 0.7,
+        max_tokens: 4096,
+      });
+      const text = chatCompletion.choices[0]?.message?.content || '';
       console.log(`✅ Success with model: ${modelName}`);
       return text;
     } catch (error) {
       lastError = error;
       console.error(`❌ Error with model ${modelName}:`, error.message);
 
-      // If it's an Auth error (400/401/403), don't bother trying other models with same key
-      if (error.status === 400 || error.status === 401 || error.status === 403) {
+      // If it's an Auth error (401/403), don't bother trying other models
+      if (error.status === 401 || error.status === 403) {
         throw error;
       }
-      // If 404, continue to next model
     }
   }
 
   throw lastError;
 };
 
-/* 
-// Previous Groq Initialization
+/*
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
