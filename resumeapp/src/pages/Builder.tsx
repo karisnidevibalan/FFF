@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
   Trash2, 
@@ -23,6 +23,10 @@ import {
   Loader2,
   Camera,
   X,
+  ChevronDown,
+  CheckCircle,
+  Lightbulb,
+  Target,
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -93,8 +97,15 @@ const Builder: React.FC = () => {
   const [showSummaryPicker, setShowSummaryPicker] = useState(false);
   const [targetRole, setTargetRole] = useState('');
   const [summaryTone, setSummaryTone] = useState('professional');
+  const [atsScore, setAtsScore] = useState<{
+    total: number;
+    details: Record<string, number>;
+    breakdown?: Record<string, { score: number; max: number; tips: string[] }>;
+  }>({ total: 0, details: {}, breakdown: {} });
+  const [showAtsPanel, setShowAtsPanel] = useState(true);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
   // Track last focused input/textarea
   useEffect(() => {
     const handleFocus = (e: FocusEvent) => {
@@ -138,6 +149,157 @@ const Builder: React.FC = () => {
     removeCustomSectionItem,
     setTemplate,
   } = useResume();
+
+  // Action verbs that ATS systems look for
+  const actionVerbs = ['achieved', 'built', 'created', 'delivered', 'developed', 'designed', 'established', 'generated', 'implemented', 'improved', 'increased', 'launched', 'led', 'managed', 'optimized', 'reduced', 'resolved', 'spearheaded', 'streamlined'];
+
+  // Real-time PROFESSIONAL ATS Score Calculator
+  useEffect(() => {
+    const { personalInfo, education, experience, skills, projects, achievements } = resumeData;
+    const details: Record<string, { score: number; max: number; tips: string[] }> = {};
+
+    // 1. CONTACT INFO (15 pts) - Essential parseable info
+    const contactTips: string[] = [];
+    let contactScore = 0;
+    if (personalInfo.fullName && personalInfo.fullName.split(' ').length >= 2) contactScore += 4;
+    else contactTips.push('Add full name (first + last)');
+    
+    if (personalInfo.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalInfo.email)) contactScore += 4;
+    else contactTips.push('Add valid email address');
+    
+    if (personalInfo.phone && personalInfo.phone.replace(/\D/g, '').length >= 10) contactScore += 3;
+    else contactTips.push('Add phone number');
+    
+    if (personalInfo.linkedin) contactScore += 2;
+    else contactTips.push('Add LinkedIn URL');
+    
+    if (personalInfo.location) contactScore += 2;
+    details['Contact Info'] = { score: contactScore, max: 15, tips: contactTips };
+
+    // 2. PROFESSIONAL SUMMARY (15 pts) - Quality content analysis
+    const summaryTips: string[] = [];
+    let summaryScore = 0;
+    if (personalInfo.summary) {
+      const words = personalInfo.summary.split(/\s+/).filter(w => w.length > 0);
+      const wordCount = words.length;
+      
+      // Length check (40-80 words optimal)
+      if (wordCount >= 30 && wordCount <= 100) summaryScore += 5;
+      else if (wordCount >= 20) summaryScore += 3;
+      else summaryTips.push('Summary should be 30-100 words');
+      
+      // Action verbs in summary
+      const hasActionVerbs = actionVerbs.some(v => personalInfo.summary.toLowerCase().includes(v));
+      if (hasActionVerbs) summaryScore += 4;
+      else summaryTips.push('Use action verbs (achieved, developed, led)');
+      
+      // Contains numbers/metrics
+      if (/\d+/.test(personalInfo.summary)) summaryScore += 3;
+      else summaryTips.push('Add metrics (5+ years, 20% improvement)');
+      
+      // No first person pronouns (ATS friendly)
+      if (!/\b(I|my|me)\b/i.test(personalInfo.summary)) summaryScore += 3;
+      else summaryTips.push('Avoid "I", "my" - use third person');
+    } else {
+      summaryTips.push('Add a professional summary');
+    }
+    details['Summary'] = { score: summaryScore, max: 15, tips: summaryTips };
+
+    // 3. EXPERIENCE (25 pts) - Most important section
+    const expTips: string[] = [];
+    let expScore = 0;
+    if (experience.length > 0) {
+      // Has experience entries
+      expScore += Math.min(experience.length * 3, 9);
+      
+      let hasActionVerbs = false;
+      let hasMetrics = false;
+      let hasGoodDescriptions = false;
+      
+      experience.forEach(exp => {
+        const desc = exp.description || '';
+        // Check for action verbs
+        if (actionVerbs.some(v => desc.toLowerCase().includes(v))) hasActionVerbs = true;
+        // Check for quantifiable results (%, $, numbers)
+        if (/\d+%|\$\d+|\d+\s*(users|clients|projects|team)/i.test(desc)) hasMetrics = true;
+        // Description length
+        if (desc.length > 100) hasGoodDescriptions = true;
+      });
+      
+      if (hasActionVerbs) expScore += 5;
+      else expTips.push('Start bullets with action verbs');
+      
+      if (hasMetrics) expScore += 6;
+      else expTips.push('Add metrics (increased sales 25%, managed team of 5)');
+      
+      if (hasGoodDescriptions) expScore += 5;
+      else expTips.push('Expand job descriptions (3-5 bullet points each)');
+    } else {
+      expTips.push('Add work experience');
+    }
+    details['Experience'] = { score: Math.min(expScore, 25), max: 25, tips: expTips };
+
+    // 4. SKILLS (20 pts) - Keyword matching
+    const skillTips: string[] = [];
+    let skillScore = 0;
+    if (skills.length > 0) {
+      // Number of skills
+      skillScore += Math.min(skills.length * 2, 12);
+      
+      // Has both technical and soft skills
+      const techKeywords = ['javascript', 'python', 'react', 'sql', 'aws', 'excel', 'java', 'node', 'css', 'html', 'git'];
+      const softKeywords = ['leadership', 'communication', 'teamwork', 'problem', 'analytical', 'management'];
+      
+      const skillNames = skills.map(s => s.name.toLowerCase());
+      const hasTech = skillNames.some(s => techKeywords.some(t => s.includes(t)));
+      const hasSoft = skillNames.some(s => softKeywords.some(t => s.includes(t)));
+      
+      if (hasTech) skillScore += 4;
+      else skillTips.push('Add technical skills relevant to your field');
+      
+      if (hasSoft) skillScore += 4;
+      else skillTips.push('Add soft skills (Leadership, Communication)');
+    } else {
+      skillTips.push('Add at least 6-8 relevant skills');
+    }
+    details['Skills'] = { score: Math.min(skillScore, 20), max: 20, tips: skillTips };
+
+    // 5. EDUCATION (15 pts)
+    const eduTips: string[] = [];
+    let eduScore = 0;
+    if (education.length > 0) {
+      eduScore += 5;
+      education.forEach(edu => {
+        if (edu.degree && edu.school) eduScore += 3;
+        if (edu.field) eduScore += 2;
+        if (edu.gpa && parseFloat(edu.gpa) >= 3.0) eduScore += 2;
+      });
+      eduScore = Math.min(eduScore, 15);
+    } else {
+      eduTips.push('Add your education details');
+    }
+    details['Education'] = { score: eduScore, max: 15, tips: eduTips };
+
+    // 6. PROJECTS & ACHIEVEMENTS (10 pts bonus)
+    const bonusTips: string[] = [];
+    let bonusScore = 0;
+    if (projects.length > 0) bonusScore += Math.min(projects.length * 2, 5);
+    else bonusTips.push('Add projects to stand out');
+    if (achievements.length > 0) bonusScore += Math.min(achievements.length * 2, 5);
+    else bonusTips.push('Add certifications or achievements');
+    details['Bonus'] = { score: bonusScore, max: 10, tips: bonusTips };
+
+    // Calculate total
+    const total = Object.values(details).reduce((sum, d) => sum + d.score, 0);
+    const maxTotal = Object.values(details).reduce((sum, d) => sum + d.max, 0);
+    const percentage = Math.round((total / maxTotal) * 100);
+
+    setAtsScore({ 
+      total: percentage, 
+      details: Object.fromEntries(Object.entries(details).map(([k, v]) => [k, v.score])),
+      breakdown: details 
+    });
+  }, [resumeData]);
 
   // Set template from URL on mount
   useEffect(() => {
@@ -1245,6 +1407,138 @@ const Builder: React.FC = () => {
                 {templateOptions.find(t => t.id === selectedTemplate)?.name || 'Cosmos'} Template
               </span>
             </div>
+
+            {/* Live ATS Score Panel - Professional */}
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-xl"
+            >
+              <div 
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-800/50 transition-colors"
+                onClick={() => setShowAtsPanel(!showAtsPanel)}
+              >
+                <div className="flex items-center gap-4">
+                  {/* Circular Gauge */}
+                  <div className="relative">
+                    <svg className="w-16 h-16 transform -rotate-90">
+                      <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="none" className="text-slate-700" />
+                      <circle 
+                        cx="32" cy="32" r="28" 
+                        stroke="url(#atsGradient)" 
+                        strokeWidth="4" 
+                        fill="none"
+                        strokeDasharray={`${(atsScore.total / 100) * 176} 176`}
+                        strokeLinecap="round"
+                        className="transition-all duration-1000 ease-out"
+                      />
+                      <defs>
+                        <linearGradient id="atsGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor={atsScore.total >= 70 ? "#22c55e" : atsScore.total >= 40 ? "#f59e0b" : "#ef4444"} />
+                          <stop offset="100%" stopColor={atsScore.total >= 70 ? "#10b981" : atsScore.total >= 40 ? "#eab308" : "#f97316"} />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-lg font-bold text-white">{atsScore.total}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-white">ATS Compatibility</p>
+                      <span className={cn(
+                        "px-2 py-0.5 rounded-full text-xs font-medium",
+                        atsScore.total >= 80 ? "bg-green-500/20 text-green-400" :
+                        atsScore.total >= 60 ? "bg-yellow-500/20 text-yellow-400" :
+                        atsScore.total >= 40 ? "bg-orange-500/20 text-orange-400" : "bg-red-500/20 text-red-400"
+                      )}>
+                        {atsScore.total >= 80 ? "Excellent" : 
+                         atsScore.total >= 60 ? "Good" :
+                         atsScore.total >= 40 ? "Fair" : "Needs Work"}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-400">Real-time resume analysis</p>
+                  </div>
+                </div>
+                <motion.div 
+                  animate={{ rotate: showAtsPanel ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"
+                >
+                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                </motion.div>
+              </div>
+              
+              <AnimatePresence>
+                {showAtsPanel && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="p-4 pt-0 space-y-3 border-t border-slate-700">
+                      {atsScore.breakdown && Object.entries(atsScore.breakdown).map(([key, data]) => {
+                        const percent = Math.round((data.score / data.max) * 100);
+                        return (
+                          <div key={key} className="space-y-1.5">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium text-slate-300">{key}</span>
+                              <div className="flex items-center gap-2">
+                                <span className={cn(
+                                  "text-xs font-semibold",
+                                  percent === 100 ? "text-green-400" :
+                                  percent >= 70 ? "text-blue-400" :
+                                  percent >= 40 ? "text-yellow-400" : "text-red-400"
+                                )}>
+                                  {data.score}/{data.max}
+                                </span>
+                                {percent === 100 && <CheckCircle className="w-4 h-4 text-green-400" />}
+                              </div>
+                            </div>
+                            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                              <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${percent}%` }}
+                                transition={{ duration: 0.8, ease: "easeOut" }}
+                                className={cn(
+                                  "h-full rounded-full",
+                                  percent === 100 ? "bg-gradient-to-r from-green-500 to-emerald-400" :
+                                  percent >= 70 ? "bg-gradient-to-r from-blue-500 to-cyan-400" :
+                                  percent >= 40 ? "bg-gradient-to-r from-yellow-500 to-amber-400" : "bg-gradient-to-r from-red-500 to-orange-400"
+                                )}
+                              />
+                            </div>
+                            {data.tips && data.tips.length > 0 && (
+                              <div className="flex items-start gap-1 mt-1">
+                                <Lightbulb className="w-3 h-3 text-amber-400 mt-0.5 flex-shrink-0" />
+                                <p className="text-xs text-slate-400">{data.tips[0]}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      
+                      <div className="pt-3 border-t border-slate-700">
+                        <div className="flex items-start gap-2 p-3 bg-slate-800/50 rounded-lg">
+                          <Target className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-white">How to improve?</p>
+                            <p className="text-xs text-slate-400 mt-1">
+                              {atsScore.total < 40 ? "Start by filling basic info - name, email, phone, and add a summary." :
+                               atsScore.total < 60 ? "Add more experience details with action verbs and quantifiable results." :
+                               atsScore.total < 80 ? "Great progress! Add metrics to your achievements (%, numbers, $)." :
+                               "Excellent resume! Consider tailoring keywords to specific job descriptions."}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
             
             {/* Resume Preview */}
             <div 
