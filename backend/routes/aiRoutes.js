@@ -364,7 +364,7 @@ Rules:
 
     res.status(200).json({
       success: true,
-      candidate: parsedData,
+      data: parsedData,
     });
 
   } catch (error) {
