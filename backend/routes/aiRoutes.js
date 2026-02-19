@@ -293,4 +293,277 @@ router.post('/suggest-skills', async (req, res) => {
   }
 });
 
+// =========== YOUR ENDPOINTS (HR Dashboard + Job Matcher) ===========
+
+// Analyze single resume against job role (for HR Dashboard)
+router.post('/analyze-candidate', async (req, res) => {
+  try {
+    const { resumeText, jobRole, jobDescription } = req.body;
+
+    if (!resumeText || resumeText.length < 50) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide valid resume text',
+      });
+    }
+
+    if (!jobRole) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a job role',
+      });
+    }
+
+    const prompt = `You are an expert HR recruiter and resume analyst. Analyze the following resume against the job role and provide a detailed assessment.
+
+Job Role: ${jobRole}
+${jobDescription ? `Job Description: ${jobDescription}` : ''}
+
+Resume:
+"""
+${resumeText.substring(0, 6000)}
+"""
+
+Analyze and return ONLY valid JSON in this exact format:
+{
+  "name": "Candidate's full name",
+  "email": "candidate@email.com",
+  "phone": "phone number",
+  "matchScore": 75,
+  "skills": ["skill1", "skill2", "skill3"],
+  "experience": "X years in relevant field",
+  "education": "Highest degree and institution",
+  "missingSkills": ["missing skill 1", "missing skill 2"],
+  "summary": "Brief 2-sentence assessment of the candidate"
+}
+
+Rules:
+1. matchScore should be 0-100 based on how well candidate matches the job role
+2. Extract actual skills mentioned in the resume
+3. Be realistic with scoring
+4. If information is not found, use "Not specified"`;
+
+    const responseText = await generateContent(prompt);
+    
+    let parsedData;
+    try {
+      let cleanJson = responseText.trim();
+      if (cleanJson.startsWith('```json')) cleanJson = cleanJson.slice(7);
+      if (cleanJson.startsWith('```')) cleanJson = cleanJson.slice(3);
+      if (cleanJson.endsWith('```')) cleanJson = cleanJson.slice(0, -3);
+      cleanJson = cleanJson.trim();
+      parsedData = JSON.parse(cleanJson);
+    } catch (parseError) {
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedData = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('Failed to parse AI response');
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      candidate: parsedData,
+    });
+
+  } catch (error) {
+    console.error('Candidate Analysis Error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to analyze candidate',
+    });
+  }
+});
+
+// Generate 3 unique career objective options
+router.post('/generate-summary-options', async (req, res) => {
+  try {
+    const {
+      targetRole,
+      skills,
+      experiences,
+      education,
+      tone
+    } = req.body;
+
+    const skillsList = skills?.map(s => s.name || s).join(', ') || '';
+    
+    const experienceContext = experiences?.length > 0 
+      ? experiences.map(exp => 
+          `${exp.position} at ${exp.company} (${exp.startDate} - ${exp.endDate || 'Present'}): ${exp.description || ''}`
+        ).join('\n')
+      : 'No prior experience';
+    
+    const educationContext = education?.length > 0
+      ? education.map(edu => 
+          `${edu.degree} in ${edu.field} from ${edu.school} (${edu.endDate || ''})`
+        ).join('\n')
+      : '';
+
+    const toneInstruction = {
+      professional: 'Use formal, corporate language. Focus on achievements and value.',
+      creative: 'Use engaging, dynamic language. Show personality while remaining professional.',
+      confident: 'Use strong, assertive language. Emphasize leadership and impact.',
+      friendly: 'Use warm, approachable language. Highlight collaboration and teamwork.'
+    }[tone] || 'Use professional yet engaging language.';
+
+    const prompt = `You are an expert resume writer. Generate 3 UNIQUE and PERSONALIZED career objective/professional summary options.
+
+CANDIDATE PROFILE:
+- Target Role: ${targetRole || 'Not specified'}
+- Skills: ${skillsList || 'Various skills'}
+- Experience:
+${experienceContext}
+- Education:
+${educationContext || 'Not specified'}
+
+TONE: ${toneInstruction}
+
+IMPORTANT RULES:
+1. Each summary must be 2-4 sentences (50-100 words)
+2. DO NOT include the candidate's name in the summary
+3. Make each option DISTINCTLY DIFFERENT:
+   - Option 1: Focus on SKILLS and TECHNICAL expertise
+   - Option 2: Focus on EXPERIENCE and ACHIEVEMENTS  
+   - Option 3: Focus on GOALS and VALUE proposition
+4. Use SPECIFIC details from the profile
+5. DO NOT use generic phrases like "seeking opportunities"
+6. DO NOT start with "I am" - use third person or direct statements
+7. Make it sound human, not robotic
+
+Return ONLY valid JSON:
+{
+  "summaries": [
+    { "type": "skills-focused", "text": "First summary..." },
+    { "type": "experience-focused", "text": "Second summary..." },
+    { "type": "goals-focused", "text": "Third summary..." }
+  ]
+}`;
+
+    const responseText = await generateContent(prompt);
+    
+    let parsedData;
+    try {
+      let cleanJson = responseText.trim();
+      if (cleanJson.startsWith('```json')) cleanJson = cleanJson.slice(7);
+      if (cleanJson.startsWith('```')) cleanJson = cleanJson.slice(3);
+      if (cleanJson.endsWith('```')) cleanJson = cleanJson.slice(0, -3);
+      cleanJson = cleanJson.trim();
+      parsedData = JSON.parse(cleanJson);
+    } catch (parseError) {
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedData = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('Failed to parse AI response');
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      summaries: parsedData.summaries || [],
+    });
+
+  } catch (error) {
+    console.error('Summary Generation Error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to generate summary',
+    });
+  }
+});
+
+// Job Description Matcher - AI Analysis
+router.post('/match-job', async (req, res) => {
+  try {
+    const { jobDescription, resumeData } = req.body;
+
+    if (!jobDescription || jobDescription.length < 50) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid job description (at least 50 characters)',
+      });
+    }
+
+    const skills = resumeData?.skills?.map(s => s.name || s).join(', ') || '';
+    const experience = resumeData?.experience?.map(exp => 
+      `${exp.position || exp.title} at ${exp.company}: ${exp.description || ''}`
+    ).join('\n') || 'No experience listed';
+    const education = resumeData?.education?.map(edu =>
+      `${edu.degree} in ${edu.field || edu.major} from ${edu.school || edu.institution}`
+    ).join('\n') || '';
+    const summary = resumeData?.personalInfo?.summary || '';
+
+    const prompt = `You are an expert ATS and HR recruiter. Analyze how well this candidate's resume matches the job description.
+
+JOB DESCRIPTION:
+"""
+${jobDescription.substring(0, 4000)}
+"""
+
+CANDIDATE'S RESUME:
+- Summary: ${summary}
+- Skills: ${skills}
+- Experience:
+${experience}
+- Education:
+${education}
+
+Return ONLY valid JSON:
+{
+  "overallScore": 75,
+  "matchedSkills": ["skill1", "skill2"],
+  "missingSkills": ["skill3", "skill4"],
+  "matchedKeywords": ["keyword1", "keyword2"],
+  "missingKeywords": ["keyword3"],
+  "experienceAnalysis": {
+    "required": "3+ years",
+    "candidateHas": "2 years",
+    "match": false,
+    "comment": "Brief comment"
+  },
+  "educationAnalysis": {
+    "required": "Bachelor's degree",
+    "candidateHas": "Bachelor's in CS",
+    "match": true
+  },
+  "suggestions": ["Suggestion 1", "Suggestion 2", "Suggestion 3"],
+  "strengths": ["Strength 1", "Strength 2"],
+  "overallVerdict": "Good match with minor gaps"
+}`;
+
+    const responseText = await generateContent(prompt);
+    
+    let parsedData;
+    try {
+      let cleanJson = responseText.trim();
+      if (cleanJson.startsWith('```json')) cleanJson = cleanJson.slice(7);
+      if (cleanJson.startsWith('```')) cleanJson = cleanJson.slice(3);
+      if (cleanJson.endsWith('```')) cleanJson = cleanJson.slice(0, -3);
+      cleanJson = cleanJson.trim();
+      parsedData = JSON.parse(cleanJson);
+    } catch (parseError) {
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedData = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('Failed to parse AI response');
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      result: parsedData,
+    });
+
+  } catch (error) {
+    console.error('Job Match Error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to analyze job match',
+    });
+  }
+});
+
 export default router;
