@@ -406,4 +406,125 @@ Return ONLY valid JSON in this format:
   }
 });
 
+// Job Description Matcher - AI Analysis
+router.post('/match-job', async (req, res) => {
+  try {
+    const { jobDescription, resumeData } = req.body;
+
+    if (!jobDescription || jobDescription.length < 50) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid job description (at least 50 characters)',
+      });
+    }
+
+    // Prepare resume context
+    const skills = resumeData?.skills?.map(s => s.name || s).join(', ') || '';
+    const experience = resumeData?.experience?.map(exp => 
+      `${exp.position || exp.title} at ${exp.company}: ${exp.description || ''}`
+    ).join('\n') || 'No experience listed';
+    const education = resumeData?.education?.map(edu =>
+      `${edu.degree} in ${edu.field || edu.major} from ${edu.school || edu.institution}`
+    ).join('\n') || '';
+    const summary = resumeData?.personalInfo?.summary || '';
+
+    const prompt = `You are an expert ATS (Applicant Tracking System) and HR recruiter. Analyze how well this candidate's resume matches the job description.
+
+JOB DESCRIPTION:
+"""
+${jobDescription.substring(0, 4000)}
+"""
+
+CANDIDATE'S RESUME:
+- Summary: ${summary}
+- Skills: ${skills}
+- Experience:
+${experience}
+- Education:
+${education}
+
+TASK: Analyze the match and return a JSON response.
+
+Return ONLY valid JSON in this exact format:
+{
+  "overallScore": 75,
+  "matchedSkills": ["skill1", "skill2"],
+  "missingSkills": ["skill3", "skill4"],
+  "matchedKeywords": ["keyword1", "keyword2"],
+  "missingKeywords": ["keyword3"],
+  "experienceAnalysis": {
+    "required": "3+ years",
+    "candidateHas": "2 years",
+    "match": false,
+    "comment": "Brief comment about experience match"
+  },
+  "educationAnalysis": {
+    "required": "Bachelor's degree",
+    "candidateHas": "Bachelor's in CS",
+    "match": true
+  },
+  "suggestions": [
+    "Specific suggestion 1 to improve match",
+    "Specific suggestion 2",
+    "Specific suggestion 3"
+  ],
+  "strengths": [
+    "Strength 1 that matches JD",
+    "Strength 2"
+  ],
+  "keywordDensity": {
+    "technical": 60,
+    "soft": 40
+  },
+  "overallVerdict": "Good match with minor gaps in cloud experience"
+}
+
+RULES:
+1. overallScore should be 0-100 based on realistic matching
+2. Extract ACTUAL skills mentioned in JD, not generic ones
+3. Compare with resume skills precisely
+4. Suggestions must be ACTIONABLE and SPECIFIC
+5. Be realistic - don't inflate scores
+6. Consider both hard skills and soft skills`;
+
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.3, // Lower for more consistent analysis
+      max_tokens: 2000,
+    });
+
+    const responseText = completion.choices[0]?.message?.content || '';
+    
+    let parsedData;
+    try {
+      let cleanJson = responseText.trim();
+      if (cleanJson.startsWith('```json')) cleanJson = cleanJson.slice(7);
+      if (cleanJson.startsWith('```')) cleanJson = cleanJson.slice(3);
+      if (cleanJson.endsWith('```')) cleanJson = cleanJson.slice(0, -3);
+      cleanJson = cleanJson.trim();
+      parsedData = JSON.parse(cleanJson);
+    } catch (parseError) {
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedData = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('Failed to parse AI response');
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      result: parsedData,
+    });
+
+  } catch (error) {
+    console.error('Job Match Error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to analyze job match',
+    });
+  }
+});
+
 export default router;
