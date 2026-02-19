@@ -11,6 +11,7 @@ const navLinks = [
   { name: 'Home', path: '/' },
   { name: 'Templates', path: '/templates' },
   { name: 'ATS Checker', path: '/ats-checker' },
+  { name: 'HR Dashboard', path: '/hr-dashboard' },
   { name: 'Tips', path: '/tips' },
   { name: 'About', path: '/about' },
 ];

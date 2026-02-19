@@ -89,6 +89,12 @@ const Builder: React.FC = () => {
   const [isListening, setIsListening] = useState(false);
   const [focusedField, setFocusedField] = useState<string>('');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [summaryOptions, setSummaryOptions] = useState<{type: string, text: string}[]>([]);
+  const [showSummaryPicker, setShowSummaryPicker] = useState(false);
+  const [targetRole, setTargetRole] = useState('');
+  const [summaryTone, setSummaryTone] = useState('professional');
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   // Track last focused input/textarea
   useEffect(() => {
     const handleFocus = (e: FocusEvent) => {
@@ -360,35 +366,60 @@ const Builder: React.FC = () => {
     recognition.start();
   };
 
-  // AI Generate Professional Summary
+  // AI Generate Professional Summary - Real AI with multiple options
   const generateAISummary = async () => {
     setIsGeneratingAI(true);
+    setSummaryOptions([]);
     
-    // Gather user data
-    const { personalInfo, experience, skills, education } = resumeData;
-    
-    // Generate AI-like summary (template-based for now)
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate AI delay
-    
-    let summary = '';
-    const skillNames = skills.map(s => s.name).filter(Boolean);
-    
-    if (experience.length > 0 && skillNames.length > 0) {
-      const yearsExp = experience.length > 2 ? 'seasoned' : experience.length > 0 ? 'experienced' : 'aspiring';
-      const topSkills = skillNames.slice(0, 3).join(', ');
-      const latestRole = experience[0];
+    try {
+      const { personalInfo, experience, skills, education } = resumeData;
       
-      summary = `${yearsExp.charAt(0).toUpperCase() + yearsExp.slice(1)} professional with expertise in ${topSkills}. ${latestRole ? `Currently serving as ${latestRole.position}${latestRole.company ? ` at ${latestRole.company}` : ''}, ` : ''}demonstrating strong capabilities in ${skillNames[0] || 'various technologies'}. ${education.length > 0 ? `Holds ${education[0].degree} in ${education[0].field} from ${education[0].school}. ` : ''}Passionate about delivering high-quality results and continuously improving skills to drive business success.`;
-    } else if (skillNames.length > 0) {
-      summary = `Motivated professional with strong skills in ${skillNames.join(', ')}. Eager to leverage technical expertise and problem-solving abilities to contribute to team success. Committed to continuous learning and professional development.`;
-    } else if (education.length > 0) {
-      summary = `Recent graduate with ${education[0].degree} in ${education[0].field} from ${education[0].school}. Eager to apply academic knowledge and fresh perspectives to real-world challenges. Quick learner with strong analytical skills and a passion for growth.`;
-    } else {
-      summary = `Dynamic and motivated professional seeking to leverage skills and experience to drive organizational success. Strong communicator with excellent problem-solving abilities and a commitment to continuous improvement.`;
+      const response = await fetch(`${API_URL}/ai/generate-summary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: personalInfo.fullName,
+          skills: skills,
+          experiences: experience,
+          education: education,
+          targetRole: targetRole,
+          tone: summaryTone,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.summaries?.length > 0) {
+        setSummaryOptions(result.summaries);
+        setShowSummaryPicker(true);
+      } else {
+        // Fallback to template-based if API fails
+        const skillNames = skills.map(s => s.name).filter(Boolean);
+        let summary = '';
+        
+        if (experience.length > 0 && skillNames.length > 0) {
+          const topSkills = skillNames.slice(0, 3).join(', ');
+          const latestRole = experience[0];
+          summary = `Experienced professional with expertise in ${topSkills}. ${latestRole ? `Currently serving as ${latestRole.position}${latestRole.company ? ` at ${latestRole.company}` : ''}.` : ''} Passionate about delivering results.`;
+        } else {
+          summary = `Motivated professional eager to leverage skills to drive success.`;
+        }
+        updatePersonalInfo({ summary });
+      }
+    } catch (error) {
+      console.error('AI Summary Error:', error);
+      // Fallback
+      updatePersonalInfo({ summary: 'Dedicated professional committed to excellence.' });
     }
     
-    updatePersonalInfo({ summary });
     setIsGeneratingAI(false);
+  };
+
+  // Select a summary option
+  const selectSummaryOption = (text: string) => {
+    updatePersonalInfo({ summary: text });
+    setShowSummaryPicker(false);
+    setSummaryOptions([]);
   };
 
   const SectionHeader: React.FC<{
@@ -620,25 +651,51 @@ const Builder: React.FC = () => {
                       onChange={(e) => updatePersonalInfo({ linkedin: e.target.value })}
                     />
                   </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <Label>Professional Summary</Label>
+                  
+                  {/* Target Role & Summary Section */}
+                  <div className="space-y-3 p-3 bg-gradient-to-r from-primary/5 to-transparent rounded-lg border border-primary/20">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Target Job Role</Label>
+                        <Input
+                          placeholder="e.g., Software Engineer"
+                          value={targetRole}
+                          onChange={(e) => setTargetRole(e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Tone</Label>
+                        <select
+                          value={summaryTone}
+                          onChange={(e) => setSummaryTone(e.target.value)}
+                          className="w-full h-8 text-sm rounded-md border border-input bg-background px-2"
+                        >
+                          <option value="professional">Professional</option>
+                          <option value="confident">Confident</option>
+                          <option value="creative">Creative</option>
+                          <option value="friendly">Friendly</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label>Professional Summary / Career Objective</Label>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="default"
                         onClick={generateAISummary}
                         disabled={isGeneratingAI}
-                        className="gap-1 text-xs h-7"
+                        className="gap-1 text-xs h-7 bg-gradient-to-r from-primary to-purple-600"
                       >
                         {isGeneratingAI ? (
                           <>
                             <Loader2 className="w-3 h-3 animate-spin" />
-                            Generating...
+                            Generating 3 Options...
                           </>
                         ) : (
                           <>
                             <Sparkles className="w-3 h-3" />
-                            AI Generate
+                            AI Generate (3 Options)
                           </>
                         )}
                       </Button>
@@ -649,6 +706,44 @@ const Builder: React.FC = () => {
                       onChange={(e) => updatePersonalInfo({ summary: e.target.value })}
                       rows={4}
                     />
+                    
+                    {/* Summary Options Picker */}
+                    {showSummaryPicker && summaryOptions.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium text-primary">Choose your preferred summary:</p>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => setShowSummaryPicker(false)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        {summaryOptions.map((option, index) => (
+                          <div
+                            key={index}
+                            onClick={() => selectSummaryOption(option.text)}
+                            className="p-3 rounded-lg border border-border hover:border-primary hover:bg-primary/5 cursor-pointer transition-all group"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <span className="text-xs font-medium text-primary capitalize bg-primary/10 px-2 py-0.5 rounded">
+                                  {option.type.replace('-', ' ')}
+                                </span>
+                                <p className="text-sm mt-2 text-muted-foreground group-hover:text-foreground">
+                                  {option.text}
+                                </p>
+                              </div>
+                              <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity h-7">
+                                Use This
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
             </div>
