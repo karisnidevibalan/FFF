@@ -23,6 +23,7 @@ import Tips from "./pages/Tips";
 import NotFound from "./pages/NotFound";
 import PublicResume from "./pages/PublicResume";
 import Payment from "./pages/Payment";
+import HRDashboard from "./pages/HRDashboard";
 
 const queryClient = new QueryClient();
 
@@ -101,6 +102,7 @@ const App = () => (
               {/* Public share page - no auth required */}
               <Route path="/share/:shareId" element={<PublicResume />} />
               <Route path="/payment" element={<Payment />} />
+              <Route path="/hr-dashboard" element={<HRDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

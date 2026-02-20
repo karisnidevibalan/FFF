@@ -35,6 +35,14 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  googleId: {
+    type: String,
+    default: '',
+  },
+  photoURL: {
+    type: String,
+    default: '',
+  },
 });
 
 const User = mongoose.model('User', userSchema);
