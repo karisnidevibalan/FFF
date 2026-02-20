@@ -16,11 +16,18 @@ import About from "./pages/About";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import AgencyDashboard from "./pages/AgencyDashboard";
+import BulkResumeAnalyzer from "./pages/BulkResumeAnalyzer";
 import Profile from "./pages/Profile";
 import Tips from "./pages/Tips";
 import NotFound from "./pages/NotFound";
 import PublicResume from "./pages/PublicResume";
+import Payment from "./pages/Payment";
 import HRDashboard from "./pages/HRDashboard";
+import RecruiterRequest from "./pages/RecruiterRequest";
+import AdminDashboard from "./pages/AdminDashboard";
+import AgencyLanding from "./pages/AgencyLanding";
+import AgencyPayment from "./pages/AgencyPayment";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +48,22 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/agency-dashboard"
+                element={
+                  <ProtectedRoute>
+                    <AgencyDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bulk-analyze"
+                element={
+                  <ProtectedRoute>
+                    <BulkResumeAnalyzer />
                   </ProtectedRoute>
                 }
               />
@@ -82,7 +105,11 @@ const App = () => (
               />
               {/* Public share page - no auth required */}
               <Route path="/share/:shareId" element={<PublicResume />} />
-              <Route path="/hr-dashboard" element={<HRDashboard />} />
+              <Route path="/for-agencies" element={<AgencyLanding />} />
+              <Route path="/agency-payment" element={<AgencyPayment />} />
+              <Route path="/hr-dashboard" element={<ProtectedRoute><HRDashboard /></ProtectedRoute>} />
+              <Route path="/recruiter-request" element={<ProtectedRoute><RecruiterRequest /></ProtectedRoute>} />
+              <Route path="/admin-dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

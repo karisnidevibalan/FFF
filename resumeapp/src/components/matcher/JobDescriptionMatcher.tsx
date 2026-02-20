@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Target, 
-  CheckCircle2, 
-  XCircle, 
-  AlertCircle, 
+import {
+  Target,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
   Sparkles,
   FileText,
   Loader2,
@@ -73,15 +73,15 @@ const JobDescriptionMatcher: React.FC<JobDescriptionMatcherProps> = ({
     }
 
     // Check if resume has data
-    const hasResumeData = resumeData.skills?.length > 0 || 
-                          resumeData.experience?.length > 0 || 
-                          resumeData.personalInfo?.summary;
-    
+    const hasResumeData = resumeData.skills?.length > 0 ||
+      resumeData.experience?.length > 0 ||
+      resumeData.personalInfo?.summary;
+
     if (!hasResumeData) {
-      toast({ 
-        title: "No Resume Data", 
-        description: "Please build your resume first in the Builder page", 
-        variant: "destructive" 
+      toast({
+        title: "No Resume Data",
+        description: "Please build your resume first in the Builder page",
+        variant: "destructive"
       });
       return;
     }
@@ -90,7 +90,10 @@ const JobDescriptionMatcher: React.FC<JobDescriptionMatcherProps> = ({
     try {
       const response = await fetch(`${API_URL}/ai/match-job`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         body: JSON.stringify({
           jobDescription,
           resumeData,
@@ -107,10 +110,10 @@ const JobDescriptionMatcher: React.FC<JobDescriptionMatcherProps> = ({
       }
     } catch (error: any) {
       console.error('Analysis failed:', error);
-      toast({ 
-        title: "Analysis Failed", 
-        description: error.message || "Could not connect to AI service", 
-        variant: "destructive" 
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "Could not connect to AI service",
+        variant: "destructive"
       });
     } finally {
       setIsAnalyzing(false);
@@ -290,9 +293,9 @@ We are looking for a Senior Software Engineer with 5+ years of experience in Rea
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {result.missingSkills.map((skill) => (
-                        <Badge 
-                          key={skill} 
-                          variant="outline" 
+                        <Badge
+                          key={skill}
+                          variant="outline"
                           className="border-red-200 text-red-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950"
                           onClick={() => {
                             navigator.clipboard.writeText(skill);

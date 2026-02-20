@@ -27,6 +27,34 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  isPremium: {
+    type: Boolean,
+    default: false,
+  },
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
+  },
+  role: {
+    type: String,
+    enum: ['individual', 'candidate', 'recruiter', 'admin'],
+    default: 'individual',
+  },
+  plan: {
+    type: String,
+    enum: ['free', 'premium', 'b2b'],
+    default: 'free',
+  },
+  usage: {
+    count: {
+      type: Number,
+      default: 0,
+    },
+    lastResetMonth: {
+      type: Number,
+      default: new Date().getMonth(),
+    },
+  },
   createdAt: {
     type: Date,
     default: Date.now,

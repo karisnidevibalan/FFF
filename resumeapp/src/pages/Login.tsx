@@ -66,11 +66,25 @@ export default function Login() {
         return;
       }
 
-      await authService.login(formData.email, formData.password);
+      const response = await authService.login(formData.email, formData.password);
+
+      // Store additional user info if needed
+      if (response.user) {
+        localStorage.setItem('user_role', response.user.role || 'candidate');
+      }
+
       setSuccess('Login successful! Redirecting...');
+
       setTimeout(() => {
-        navigate('/');
-      }, 2000);
+        const role = response.user?.role;
+        if (role === 'admin') {
+          navigate('/admin-dashboard');
+        } else if (role === 'recruiter') {
+          navigate('/hr-dashboard'); // Using HRDashboard as Recruiter Dashboard
+        } else {
+          navigate('/dashboard');
+        }
+      }, 1000);
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {

@@ -38,7 +38,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { useToast } from '@/hooks/use-toast';
 
 // Set PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -101,6 +101,7 @@ const HRDashboard: React.FC = () => {
     const newCandidates: Candidate[] = [];
     let successCount = 0;
     let errorCount = 0;
+    let lastError: any = null;
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -109,30 +110,34 @@ const HRDashboard: React.FC = () => {
       try {
         // Extract text from PDF
         let text = '';
-        if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-          const arrayBuffer = await file.arrayBuffer();
-          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-            const page = await pdf.getPage(pageNum);
-            const textContent = await page.getTextContent();
-            text += textContent.items.map((item: any) => item.str).join(' ') + '\n';
-          }
-        } else if (file.name.endsWith('.txt')) {
-          text = await file.text();
-        } else if (file.name.endsWith('.docx')) {
-          const arrayBuffer = await file.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-          const fullContent = new TextDecoder('utf-8').decode(uint8Array);
-          const matches = fullContent.match(/<w:t[^>]*>([^<]+)<\/w:t>/g);
-          if (matches) text = matches.map(m => m.replace(/<[^>]+>/g, '')).join(' ');
+        // Use server-side extraction for better reliability
+        const formData = new FormData();
+        formData.append('file', file);
+
+        console.log(`Sending ${file.name} for server-side extraction...`);
+
+        const extractResponse = await fetch(`${API_URL}/ai/extract-text`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!extractResponse.ok) {
+          const errData = await extractResponse.json();
+          throw new Error(errData.error || 'Failed to extract text from file');
         }
 
-        if (text.length < 50) throw new Error('Could not extract text from resume');
+        const extractResult = await extractResponse.json();
+        text = extractResult.text;
+
+        if (text.length < 50) throw new Error('Could not extract sufficient text from file. Please try a TXT or different PDF format.');
 
         // Call AI API
         const response = await fetch(`${API_URL}/ai/analyze-candidate`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
           body: JSON.stringify({ resumeText: text, jobRole, jobDescription }),
         });
 
@@ -158,6 +163,7 @@ const HRDashboard: React.FC = () => {
         }
       } catch (error) {
         console.error(`Error processing ${file.name}:`, error);
+        lastError = error;
         errorCount++;
       }
 
@@ -170,21 +176,21 @@ const HRDashboard: React.FC = () => {
     setUploadProgress(0);
     setCurrentFile('');
     if (fileInputRef.current) fileInputRef.current.value = '';
-    
+
     toast({
       title: "Upload Complete",
-      description: `Analyzed ${successCount} resume(s)${errorCount > 0 ? `, ${errorCount} failed` : ''}`,
+      description: `Analyzed ${successCount} resume(s)${errorCount > 0 ? `, ${errorCount} failed. Last error: ${lastError}` : ''}`,
       variant: successCount > 0 ? "default" : "destructive",
     });
   };
 
   const filteredCandidates = candidates.filter(candidate => {
-    const matchesSearch = 
+    const matchesSearch =
       candidate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       candidate.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       candidate.skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesFilter = 
+
+    const matchesFilter =
       filterScore === 'all' ||
       (filterScore === 'excellent' && candidate.matchScore >= 85) ||
       (filterScore === 'good' && candidate.matchScore >= 70 && candidate.matchScore < 85) ||
@@ -206,7 +212,7 @@ const HRDashboard: React.FC = () => {
   };
 
   const exportToCSV = () => {
-    const dataToExport = selectedCandidates.length > 0 
+    const dataToExport = selectedCandidates.length > 0
       ? candidates.filter(c => selectedCandidates.includes(c.id))
       : filteredCandidates;
 
@@ -245,7 +251,7 @@ const HRDashboard: React.FC = () => {
     total: candidates.length,
     shortlisted: candidates.filter(c => c.status === 'shortlisted').length,
     rejected: candidates.filter(c => c.status === 'rejected').length,
-    avgScore: candidates.length > 0 
+    avgScore: candidates.length > 0
       ? Math.round(candidates.reduce((acc, c) => acc + c.matchScore, 0) / candidates.length) : 0,
   };
 
@@ -354,10 +360,9 @@ const HRDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                <div 
-                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-                    jobRole ? 'border-primary/50 bg-primary/5 cursor-pointer hover:bg-primary/10' : 'border-gray-300 bg-gray-50 cursor-not-allowed'
-                  }`}
+                <div
+                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${jobRole ? 'border-primary/50 bg-primary/5 cursor-pointer hover:bg-primary/10' : 'border-gray-300 bg-gray-50 cursor-not-allowed'
+                    }`}
                   onClick={() => jobRole && fileInputRef.current?.click()}
                 >
                   {isUploading ? (
@@ -518,7 +523,7 @@ const HRDashboard: React.FC = () => {
                                 <Badge
                                   variant={
                                     candidate.status === 'shortlisted' ? 'default' :
-                                    candidate.status === 'rejected' ? 'destructive' : 'secondary'
+                                      candidate.status === 'rejected' ? 'destructive' : 'secondary'
                                   }
                                 >
                                   {candidate.status}

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  User, 
-  Mail, 
-  Lock, 
-  Save, 
+import {
+  User,
+  Mail,
+  Lock,
+  Save,
   Camera,
   Bell,
   Shield,
@@ -28,14 +28,14 @@ const Profile: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  
+
   // Form states
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+
   // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [weeklyTips, setWeeklyTips] = useState(true);
@@ -56,19 +56,12 @@ const Profile: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     setMessage(null);
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update local storage
-      const updatedUser = { ...user, name, email };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-      
+      await authService.updateProfile({ name, email });
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to update profile. Please try again.' });
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message || 'Failed to update profile. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -76,30 +69,42 @@ const Profile: React.FC = () => {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
       setMessage({ type: 'error', text: 'New passwords do not match.' });
       return;
     }
-    
+
     if (newPassword.length < 6) {
       setMessage({ type: 'error', text: 'Password must be at least 6 characters.' });
       return;
     }
-    
+
     setIsLoading(true);
     setMessage(null);
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Use potential backend endpoint
+      const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const res = await fetch(`${API_URL}/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to change password');
+
       setMessage({ type: 'success', text: 'Password changed successfully!' });
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to change password. Please try again.' });
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message || 'Failed to change password. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -147,11 +152,10 @@ const Profile: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
-              message.type === 'success' 
-                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800' 
+            className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${message.type === 'success'
+                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
                 : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
-            }`}
+              }`}
           >
             {message.type === 'success' ? (
               <CheckCircle className="w-5 h-5" />
@@ -174,7 +178,7 @@ const Profile: React.FC = () => {
               <User className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Profile Information</h2>
             </div>
-            
+
             <form onSubmit={handleUpdateProfile}>
               <div className="flex flex-col md:flex-row gap-6">
                 {/* Avatar */}
@@ -187,7 +191,7 @@ const Profile: React.FC = () => {
                     Change
                   </Button>
                 </div>
-                
+
                 {/* Form Fields */}
                 <div className="flex-1 space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
@@ -231,7 +235,7 @@ const Profile: React.FC = () => {
               <Lock className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Change Password</h2>
             </div>
-            
+
             <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
               <div className="space-y-2">
                 <Label htmlFor="currentPassword">Current Password</Label>
@@ -280,7 +284,7 @@ const Profile: React.FC = () => {
               <Palette className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Preferences</h2>
             </div>
-            
+
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
@@ -306,7 +310,7 @@ const Profile: React.FC = () => {
               <Bell className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold">Notifications</h2>
             </div>
-            
+
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
@@ -352,7 +356,7 @@ const Profile: React.FC = () => {
               <Shield className="w-5 h-5 text-red-500" />
               <h2 className="text-lg font-semibold text-red-700 dark:text-red-400">Danger Zone</h2>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <p className="font-medium">Sign Out</p>

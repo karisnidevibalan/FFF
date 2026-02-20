@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LayoutGrid, Star, Code, Image, Briefcase, Award, 
+import {
+  LayoutGrid, Star, Code, Image, Briefcase, Award,
   Mail, Phone, MapPin, CheckCircle, Search, Columns,
   Upload, FilePlus, X, FileText, Loader2
 } from 'lucide-react';
@@ -38,7 +38,7 @@ const KellyTemplate = () => (
       <h3 className="font-bold text-[12px] text-slate-800 leading-tight">KELLY</h3>
       <h3 className="font-bold text-[12px] text-slate-800 mb-1">BLACKWELL</h3>
       <p className="text-slate-600 text-[8px] mb-3">Administrative Assistant</p>
-      
+
       <div className="mb-3">
         <h4 className="font-bold text-[8px] text-slate-700 border-b border-slate-300 pb-1 mb-2">DETAILS</h4>
         <div className="space-y-1 text-[7px] text-slate-600">
@@ -56,7 +56,7 @@ const KellyTemplate = () => (
           </div>
         </div>
       </div>
-      
+
       <div>
         <h4 className="font-bold text-[8px] text-slate-700 border-b border-slate-300 pb-1 mb-2">SKILLS</h4>
         <ul className="space-y-0.5 text-[7px] text-slate-600">
@@ -72,11 +72,11 @@ const KellyTemplate = () => (
       <div className="mb-3">
         <h4 className="font-bold text-[9px] text-slate-800 border-b border-slate-300 pb-1 mb-1.5">SUMMARY</h4>
         <p className="text-slate-600 leading-relaxed">
-          Administrative assistant with 9+ years of experience organizing presentations, preparing reports, 
+          Administrative assistant with 9+ years of experience organizing presentations, preparing reports,
           and maintaining confidentiality. Expertise in Microsoft Excel.
         </p>
       </div>
-      
+
       <div className="mb-3">
         <h4 className="font-bold text-[9px] text-slate-800 border-b border-slate-300 pb-1 mb-1.5">EXPERIENCE</h4>
         <div className="mb-2">
@@ -98,7 +98,7 @@ const KellyTemplate = () => (
           <p className="text-blue-600 text-[7px]">Bright Spot Ltd., Boston</p>
         </div>
       </div>
-      
+
       <div>
         <h4 className="font-bold text-[9px] text-slate-800 border-b border-slate-300 pb-1 mb-1.5">EDUCATION</h4>
         <p className="font-semibold text-[8px]">Bachelor of Arts, Finance</p>
@@ -117,15 +117,15 @@ const HowardTemplate = () => (
         San Francisco, CA | howard.jones@gmail.com | (415) 555-2671
       </p>
     </div>
-    
+
     <div className="mb-3">
       <h4 className="font-bold text-[9px] text-slate-700 text-center border-b border-slate-200 pb-1 mb-1.5">SUMMARY</h4>
       <p className="text-slate-600 leading-relaxed text-center">
-        Experienced Lawyer with passion for justice. Skilled in public speaking with proven track record 
+        Experienced Lawyer with passion for justice. Skilled in public speaking with proven track record
         of achieving favorable outcomes. Adept in preparing trials and presenting cases.
       </p>
     </div>
-    
+
     <div className="mb-3">
       <h4 className="font-bold text-[9px] text-slate-700 text-center border-b border-slate-200 pb-1 mb-1.5">EXPERIENCE</h4>
       <div className="mb-2">
@@ -139,7 +139,7 @@ const HowardTemplate = () => (
         </ul>
       </div>
     </div>
-    
+
     <div className="grid grid-cols-2 gap-3">
       <div>
         <h4 className="font-bold text-[9px] text-slate-700 border-b border-slate-200 pb-1 mb-1.5">EDUCATION</h4>
@@ -162,7 +162,7 @@ const SamanthaTemplate = () => (
       </div>
       <h3 className="text-center font-bold text-[10px] mb-0.5">Samantha Williams</h3>
       <p className="text-center text-blue-200 text-[8px] mb-2">Senior Analyst</p>
-      
+
       <div className="space-y-1 text-[7px] mb-3">
         <div className="flex items-center gap-1">
           <MapPin className="w-2.5 h-2.5" />
@@ -177,7 +177,7 @@ const SamanthaTemplate = () => (
           <span>(555) 789-1234</span>
         </div>
       </div>
-      
+
       <div>
         <h4 className="font-bold text-[8px] border-b border-blue-400 pb-1 mb-1.5">SKILLS</h4>
         <ul className="space-y-0.5">
@@ -194,11 +194,11 @@ const SamanthaTemplate = () => (
       <div className="mb-3">
         <h4 className="font-bold text-[9px] text-slate-800 border-b border-slate-300 pb-1 mb-1.5">SUMMARY</h4>
         <p className="text-slate-600 leading-relaxed">
-          Senior Analyst with 5+ years of experience in data analysis and business intelligence. 
+          Senior Analyst with 5+ years of experience in data analysis and business intelligence.
           Skilled in driving operational efficiency and data-driven strategies.
         </p>
       </div>
-      
+
       <div className="mb-3">
         <h4 className="font-bold text-[9px] text-slate-800 border-b border-slate-300 pb-1 mb-1.5">EXPERIENCE</h4>
         <div className="mb-2">
@@ -220,7 +220,7 @@ const SamanthaTemplate = () => (
           <p className="text-blue-600 text-[7px]">Willow & Wren Ltd.</p>
         </div>
       </div>
-      
+
       <div>
         <h4 className="font-bold text-[9px] text-slate-800 border-b border-slate-300 pb-1 mb-1.5">EDUCATION</h4>
         <p className="font-semibold text-[8px]">New York University</p>
@@ -243,11 +243,11 @@ const JessieTemplate = () => (
       <div className="mb-3">
         <h4 className="font-bold text-[9px] text-violet-600 border-b border-violet-200 pb-1 mb-1.5">SUMMARY</h4>
         <p className="text-slate-600 leading-relaxed">
-          HR generalist with 8 years of experience in hiring, training, and employee management. 
+          HR generalist with 8 years of experience in hiring, training, and employee management.
           Worked with labor unions to negotiate compensation packages.
         </p>
       </div>
-      
+
       <div className="mb-3">
         <h4 className="font-bold text-[9px] text-violet-600 border-b border-violet-200 pb-1 mb-1.5">EXPERIENCE</h4>
         <div className="mb-2">
@@ -262,7 +262,7 @@ const JessieTemplate = () => (
           </ul>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-2 gap-3">
         <div>
           <h4 className="font-bold text-[9px] text-violet-600 border-b border-violet-200 pb-1 mb-1.5">EDUCATION</h4>
@@ -289,15 +289,15 @@ const WesTemplate = () => (
     <div className="flex-1 p-3">
       <h3 className="font-bold text-[12px] text-slate-900">WES TURNER</h3>
       <p className="text-amber-600 text-[9px] font-medium mb-2">SALES MANAGER</p>
-      
+
       <div className="mb-3">
         <h4 className="font-bold text-[8px] text-slate-800 bg-slate-100 px-1 py-0.5 mb-1.5">SUMMARY</h4>
         <p className="text-slate-600 leading-relaxed">
-          Experienced Sales Manager with five years of industry experience overseeing sales figures 
+          Experienced Sales Manager with five years of industry experience overseeing sales figures
           and new account developments.
         </p>
       </div>
-      
+
       <div className="mb-3">
         <h4 className="font-bold text-[8px] text-slate-800 bg-slate-100 px-1 py-0.5 mb-1.5">EXPERIENCE</h4>
         <div className="mb-2">
@@ -309,7 +309,7 @@ const WesTemplate = () => (
           </ul>
         </div>
       </div>
-      
+
       <div>
         <h4 className="font-bold text-[8px] text-slate-800 bg-slate-100 px-1 py-0.5 mb-1.5">EDUCATION</h4>
         <p className="font-semibold text-[8px]">Colorado College</p>
@@ -323,7 +323,7 @@ const WesTemplate = () => (
         <p>(720) 315-8237</p>
         <p>wes@gmail.com</p>
       </div>
-      
+
       <h4 className="font-bold text-[8px] text-amber-800 mb-1.5">SKILLS</h4>
       <ul className="space-y-0.5 text-[7px] text-slate-600">
         <li>Project Management</li>
@@ -346,7 +346,7 @@ const SebastianTemplate = () => (
         <p>(917) 324-1818</p>
         <p>hw12@yahoo.com</p>
       </div>
-      
+
       <h4 className="text-[8px] font-bold mt-3 mb-1.5">SKILLS</h4>
       <ul className="space-y-0.5">
         {['Communication', 'Motivated', 'MS Office', 'Social Media'].map(skill => (
@@ -361,20 +361,20 @@ const SebastianTemplate = () => (
       <h3 className="font-bold text-[12px] text-slate-900">SEBASTIAN</h3>
       <h3 className="font-bold text-[12px] text-slate-900 mb-0.5">WILDER</h3>
       <p className="text-cyan-600 text-[8px] font-medium mb-2">Student</p>
-      
+
       <div className="mb-3">
         <h4 className="font-bold text-[9px] text-cyan-600 border-b border-cyan-200 pb-1 mb-1.5">SUMMARY</h4>
         <p className="text-slate-600 leading-relaxed">
           Hardworking student seeking employment with positive attitude and motivation to learn new skills.
         </p>
       </div>
-      
+
       <div className="mb-3">
         <h4 className="font-bold text-[9px] text-cyan-600 border-b border-cyan-200 pb-1 mb-1.5">EXPERIENCE</h4>
         <p className="font-semibold text-[8px]">Sales Associate</p>
         <p className="text-[7px] text-slate-500">Big Apple Bookstore • Sep 2015 - Jun 2018</p>
       </div>
-      
+
       <div>
         <h4 className="font-bold text-[9px] text-cyan-600 border-b border-cyan-200 pb-1 mb-1.5">EDUCATION</h4>
         <p className="font-semibold text-[8px]">Bachelor, Communications</p>
@@ -395,11 +395,11 @@ const NebulaTemplate = () => (
         <span>☎ (555) 123-4567</span>
       </div>
     </div>
-    
+
     <p className="text-slate-600 border-l-2 border-indigo-200 pl-2 mb-3 italic text-[7px]">
       Passionate developer with 5+ years of experience building scalable web applications.
     </p>
-    
+
     <div className="grid grid-cols-3 gap-3">
       <div className="col-span-2">
         <h4 className="font-bold text-[8px] text-indigo-600 mb-2 flex items-center gap-1">
@@ -418,7 +418,7 @@ const NebulaTemplate = () => (
             <div key={skill}>
               <p className="text-[7px]">{skill}</p>
               <div className="h-1 bg-slate-200 rounded-full">
-                <div className="h-full bg-indigo-500 rounded-full" style={{width: '85%'}}></div>
+                <div className="h-full bg-indigo-500 rounded-full" style={{ width: '85%' }}></div>
               </div>
             </div>
           ))}
@@ -440,11 +440,11 @@ const StellarTemplate = () => (
         <span>New York, NY</span>
       </div>
     </div>
-    
+
     <p className="text-center text-slate-600 mb-4 max-w-[80%] mx-auto text-[7px]">
       Strategic marketing professional with expertise in digital campaigns and brand development.
     </p>
-    
+
     <div className="grid grid-cols-2 gap-4">
       <div>
         <h4 className="font-semibold text-[7px] uppercase tracking-widest text-slate-400 mb-2">Experience</h4>
@@ -477,12 +477,12 @@ const OrbitTemplate = () => (
         </div>
       </div>
     </div>
-    
+
     <div className="p-3">
       <div className="bg-white p-2 rounded-lg shadow-sm mb-2">
         <p className="text-slate-600 text-[7px]">Creative designer passionate about user-centered design.</p>
       </div>
-      
+
       <div className="grid grid-cols-3 gap-2">
         <div className="col-span-2 bg-white p-2 rounded-lg shadow-sm">
           <h4 className="font-bold text-[8px] text-rose-600 mb-1">💼 Experience</h4>
@@ -559,7 +559,7 @@ const ModernPreviewTemplate = () => (
           <div key={skill} className="mb-1">
             <p className="text-[6px]">{skill}</p>
             <div className="h-1 bg-slate-200 rounded-full">
-              <div className="h-full bg-blue-500 rounded-full" style={{width: '80%'}}></div>
+              <div className="h-full bg-blue-500 rounded-full" style={{ width: '80%' }}></div>
             </div>
           </div>
         ))}
@@ -882,7 +882,7 @@ const HorizonPreviewTemplate = () => (
           <div key={skill} className="mb-1">
             <p className="text-[5px]">{skill}</p>
             <div className="h-1 bg-slate-200 rounded-full">
-              <div className="h-full bg-blue-500 rounded-full" style={{width: '80%'}}></div>
+              <div className="h-full bg-blue-500 rounded-full" style={{ width: '80%' }}></div>
             </div>
           </div>
         ))}
@@ -961,163 +961,163 @@ const VertexPreviewTemplate = () => (
 );
 
 const templates = [
-  { 
-    id: 'cosmos', 
-    name: 'Cosmos', 
+  {
+    id: 'cosmos',
+    name: 'Cosmos',
     category: ['all', 'professional', 'ats', 'simple'],
     component: KellyTemplate,
     description: 'Clean two-column professional layout'
   },
-  { 
-    id: 'celestial', 
-    name: 'Celestial', 
+  {
+    id: 'celestial',
+    name: 'Celestial',
     category: ['all', 'one-column', 'ats', 'professional'],
     component: HowardTemplate,
     description: 'Classic centered single-column design'
   },
-  { 
-    id: 'galaxy', 
-    name: 'Galaxy', 
+  {
+    id: 'galaxy',
+    name: 'Galaxy',
     category: ['all', 'with-photo', 'modern', 'professional'],
     component: SamanthaTemplate,
     description: 'Modern with photo sidebar'
   },
-  { 
-    id: 'aurora', 
-    name: 'Aurora', 
+  {
+    id: 'aurora',
+    name: 'Aurora',
     category: ['all', 'modern', 'professional'],
     component: JessieTemplate,
     description: 'Modern gradient header design'
   },
-  { 
-    id: 'lunar', 
-    name: 'Lunar', 
+  {
+    id: 'lunar',
+    name: 'Lunar',
     category: ['all', 'professional', 'simple'],
     component: WesTemplate,
     description: 'Two-column with colored sidebar'
   },
-  { 
-    id: 'eclipse', 
-    name: 'Eclipse', 
+  {
+    id: 'eclipse',
+    name: 'Eclipse',
     category: ['all', 'with-photo', 'simple'],
     component: SebastianTemplate,
     description: 'Entry-level with photo placeholder'
   },
-  { 
-    id: 'nebula', 
-    name: 'Nebula', 
+  {
+    id: 'nebula',
+    name: 'Nebula',
     category: ['all', 'modern', 'professional'],
     component: NebulaTemplate,
     description: 'Modern clean with accent line'
   },
-  { 
-    id: 'stellar', 
-    name: 'Stellar', 
+  {
+    id: 'stellar',
+    name: 'Stellar',
     category: ['all', 'simple', 'ats'],
     component: StellarTemplate,
     description: 'Minimal elegant design'
   },
-  { 
-    id: 'orbit', 
-    name: 'Orbit', 
+  {
+    id: 'orbit',
+    name: 'Orbit',
     category: ['all', 'modern', 'with-photo'],
     component: OrbitTemplate,
     description: 'Creative with timeline design'
   },
-  { 
-    id: 'executive', 
-    name: 'Executive', 
+  {
+    id: 'executive',
+    name: 'Executive',
     category: ['all', 'professional', 'ats'],
     component: ExecutiveTemplate,
     description: 'Bold corporate executive style'
   },
-  { 
-    id: 'modern', 
-    name: 'Modern', 
+  {
+    id: 'modern',
+    name: 'Modern',
     category: ['all', 'modern', 'professional'],
     component: ModernPreviewTemplate,
     description: 'Two-column with skills progress'
   },
-  { 
-    id: 'classic', 
-    name: 'Classic', 
+  {
+    id: 'classic',
+    name: 'Classic',
     category: ['all', 'simple', 'ats', 'one-column'],
     component: ClassicPreviewTemplate,
     description: 'Traditional single-column format'
   },
-  { 
-    id: 'minimalist', 
-    name: 'Minimalist', 
+  {
+    id: 'minimalist',
+    name: 'Minimalist',
     category: ['all', 'simple', 'modern'],
     component: MinimalistPreviewTemplate,
     description: 'Ultra clean minimal design'
   },
-  { 
-    id: 'creative', 
-    name: 'Creative', 
+  {
+    id: 'creative',
+    name: 'Creative',
     category: ['all', 'modern', 'with-photo'],
     component: CreativePreviewTemplate,
     description: 'Bold colors and unique layout'
   },
-  { 
-    id: 'professional', 
-    name: 'Professional', 
+  {
+    id: 'professional',
+    name: 'Professional',
     category: ['all', 'professional', 'ats'],
     component: ProfessionalPreviewTemplate,
     description: 'Clean corporate professional'
   },
-  { 
-    id: 'nova', 
-    name: 'Nova', 
+  {
+    id: 'nova',
+    name: 'Nova',
     category: ['all', 'ats', 'professional'],
     component: NovaPreviewTemplate,
     description: 'ATS-optimized two-column layout'
   },
-  { 
-    id: 'eon', 
-    name: 'Eon', 
+  {
+    id: 'eon',
+    name: 'Eon',
     category: ['all', 'ats', 'simple'],
     component: EonPreviewTemplate,
     description: 'Clean ATS-friendly with sidebar'
   },
-  { 
-    id: 'solstice', 
-    name: 'Solstice', 
+  {
+    id: 'solstice',
+    name: 'Solstice',
     category: ['all', 'ats', 'one-column'],
     component: SolsticePreviewTemplate,
     description: 'ATS single-column professional'
   },
-  { 
-    id: 'zenith', 
-    name: 'Zenith', 
+  {
+    id: 'zenith',
+    name: 'Zenith',
     category: ['all', 'ats', 'simple', 'one-column'],
     component: ZenithPreviewTemplate,
     description: 'ATS minimal with elegant lines'
   },
-  { 
-    id: 'apex', 
-    name: 'Apex', 
+  {
+    id: 'apex',
+    name: 'Apex',
     category: ['all', 'ats', 'professional'],
     component: ApexPreviewTemplate,
     description: 'ATS professional with top border'
   },
-  { 
-    id: 'horizon', 
-    name: 'Horizon', 
+  {
+    id: 'horizon',
+    name: 'Horizon',
     category: ['all', 'ats', 'modern'],
     component: HorizonPreviewTemplate,
     description: 'ATS modern with skill bars'
   },
-  { 
-    id: 'pinnacle', 
-    name: 'Pinnacle', 
+  {
+    id: 'pinnacle',
+    name: 'Pinnacle',
     category: ['all', 'ats', 'professional'],
     component: PinnaclePreviewTemplate,
     description: 'ATS executive with bold header'
   },
-  { 
-    id: 'vertex', 
-    name: 'Vertex', 
+  {
+    id: 'vertex',
+    name: 'Vertex',
     category: ['all', 'ats', 'modern'],
     component: VertexPreviewTemplate,
     description: 'ATS bold with accent sidebar'
@@ -1139,7 +1139,7 @@ const Templates: React.FC = () => {
   const filteredTemplates = templates.filter(t => {
     const matchesCategory = selectedCategory === 'all' || t.category.includes(selectedCategory);
     const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         t.description.toLowerCase().includes(searchQuery.toLowerCase());
+      t.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -1169,13 +1169,13 @@ const Templates: React.FC = () => {
       .replace(/\t/g, ' ')
       .replace(/\s+/g, ' ')
       .replace(/\n\s*\n/g, '\n\n');
-    
+
     const lines = cleanText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    
+
     // Extract email - more comprehensive pattern
     const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
     const email = emailMatch ? emailMatch[0] : '';
-    
+
     // Extract phone - multiple formats including Indian numbers
     const phonePatterns = [
       /\+91[\s.-]?\d{10}/,
@@ -1194,16 +1194,16 @@ const Templates: React.FC = () => {
         break;
       }
     }
-    
+
     // Extract name - usually the first prominent line (before email/phone)
     let fullName = '';
     for (const line of lines.slice(0, 10)) {
       const cleanLine = line.replace(/[^\w\s]/g, '').trim();
       // Name should be 2-4 words, alphabetic, not too long
       if (
-        cleanLine.length >= 3 && 
+        cleanLine.length >= 3 &&
         cleanLine.length <= 50 &&
-        !cleanLine.includes('@') && 
+        !cleanLine.includes('@') &&
         !cleanLine.match(/^\d/) &&
         !cleanLine.match(/^\+/) &&
         cleanLine.split(' ').length >= 1 &&
@@ -1217,7 +1217,7 @@ const Templates: React.FC = () => {
         break;
       }
     }
-    
+
     // Extract job title / desired position
     let jobTitle = '';
     const titlePatterns = [
@@ -1231,11 +1231,11 @@ const Templates: React.FC = () => {
         break;
       }
     }
-    
+
     // Extract LinkedIn
     const linkedinMatch = text.match(/(?:linkedin\.com\/in\/|linkedin:?\s*)([a-zA-Z0-9-]+)/i);
     const linkedin = linkedinMatch ? `linkedin.com/in/${linkedinMatch[1]}` : '';
-    
+
     // Extract location
     let location = '';
     const locationPatterns = [
@@ -1250,12 +1250,12 @@ const Templates: React.FC = () => {
         break;
       }
     }
-    
+
     // Extract summary/objective/profile
     let summary = '';
     const summaryHeaders = ['summary', 'objective', 'profile', 'about me', 'career objective', 'professional summary'];
     const sectionHeaders = ['experience', 'education', 'skills', 'projects', 'work', 'employment', 'qualifications', 'certifications', 'achievements', 'awards'];
-    
+
     for (const header of summaryHeaders) {
       const headerRegex = new RegExp(`(?:${header})[:\\s]*([\\s\\S]*?)(?=${sectionHeaders.join('|')}|$)`, 'i');
       const match = cleanText.match(headerRegex);
@@ -1264,11 +1264,11 @@ const Templates: React.FC = () => {
         break;
       }
     }
-    
+
     // Extract skills - comprehensive extraction
     const skills: string[] = [];
     const skillHeaders = ['skills', 'technical skills', 'core competencies', 'technologies', 'tools', 'programming languages', 'frameworks', 'soft skills'];
-    
+
     for (const header of skillHeaders) {
       const headerRegex = new RegExp(`(?:${header})[:\\s]*([\\s\\S]*?)(?=${sectionHeaders.join('|')}|$)`, 'i');
       const match = cleanText.match(headerRegex);
@@ -1285,15 +1285,15 @@ const Templates: React.FC = () => {
     }
     // Remove duplicates
     const uniqueSkills = [...new Set(skills)].slice(0, 20);
-    
+
     // Extract experience - comprehensive extraction
     const experiences: { position: string; company: string; description: string; startDate: string; endDate: string }[] = [];
     const expRegex = /(?:experience|employment|work history)[:\s]*([\s\S]*?)(?=education|skills|projects|certifications|achievements|awards|$)/i;
     const expMatch = cleanText.match(expRegex);
-    
+
     if (expMatch && expMatch[1]) {
       const expText = expMatch[1];
-      
+
       // Try to find job entries with dates
       const jobEntryPattern = /([A-Za-z\s]+(?:Developer|Engineer|Designer|Analyst|Manager|Intern|Executive|Specialist|Coordinator|Lead|Director|Consultant|Trainee|Associate))[\s\S]*?(?:(\w+\s*\d{4})\s*[-–—]\s*(\w+\s*\d{4}|Present|Current|Till Date))/gi;
       let jobMatch;
@@ -1306,7 +1306,7 @@ const Templates: React.FC = () => {
           endDate: jobMatch[3] || 'Present'
         });
       }
-      
+
       // If no structured matches, try simpler pattern
       if (experiences.length === 0) {
         const simpleJobPattern = /([A-Z][a-zA-Z\s]*(?:Intern|Developer|Engineer|Designer|Analyst|Manager|Executive|Specialist|Trainee))/g;
@@ -1324,27 +1324,27 @@ const Templates: React.FC = () => {
         }
       }
     }
-    
+
     // Extract education - comprehensive extraction
     const educations: { degree: string; school: string; field: string; startDate: string; endDate: string; grade: string }[] = [];
     const eduRegex = /(?:education|academic|qualifications?)[:\s]*([\s\S]*?)(?=experience|skills|projects|certifications|achievements|work|$)/i;
     const eduMatch = cleanText.match(eduRegex);
-    
+
     if (eduMatch && eduMatch[1]) {
       const eduText = eduMatch[1];
-      
+
       // Match degree patterns
       const degreePatterns = [
         /(Bachelor|Master|PhD|B\.?Tech|M\.?Tech|B\.?E\.?|M\.?E\.?|B\.?Sc|M\.?Sc|B\.?A\.?|M\.?A\.?|MBA|BBA|BCA|MCA|B\.?Com|M\.?Com|Diploma|HSC|SSC|SSLC|12th|10th|Higher Secondary|Secondary)[\s\S]*?(?:(\d{4})\s*[-–—]\s*(\d{4}|Present|Current|Pursuing))?/gi,
       ];
-      
+
       for (const pattern of degreePatterns) {
         let degMatch;
         while ((degMatch = pattern.exec(eduText)) !== null) {
           // Try to find school name near the degree
           const nearbyText = eduText.substring(Math.max(0, degMatch.index - 100), degMatch.index + degMatch[0].length + 100);
           const schoolMatch = nearbyText.match(/(?:College|University|Institute|School|Academy)[:\s,]*([A-Za-z\s,]+)/i);
-          
+
           educations.push({
             degree: degMatch[1].trim(),
             school: schoolMatch ? schoolMatch[0].trim() : '',
@@ -1355,36 +1355,36 @@ const Templates: React.FC = () => {
           });
         }
       }
-      
+
       // Look for CGPA/Grade
       const gradeMatch = eduText.match(/(?:CGPA|GPA|Grade|Percentage)[:\s]*(\d+\.?\d*(?:\s*%)?)/i);
       if (gradeMatch && educations.length > 0) {
         educations[0].grade = gradeMatch[0];
       }
     }
-    
+
     // Extract achievements
     const achievements: { title: string; description: string }[] = [];
     const achieveRegex = /(?:achievements?|awards?|honors?|accomplishments?)[:\s]*([\s\S]*?)(?=experience|education|skills|projects|certifications|$)/i;
     const achieveMatch = cleanText.match(achieveRegex);
-    
+
     if (achieveMatch && achieveMatch[1]) {
       const achieveText = achieveMatch[1];
       const achieveItems = achieveText
         .split(/[•·\n\r]+/)
         .map(s => s.replace(/^\s*[-–—]\s*/, '').trim())
         .filter(s => s.length >= 10 && s.length <= 200);
-      
+
       achieveItems.slice(0, 5).forEach(item => {
         achievements.push({ title: item.substring(0, 50), description: item });
       });
     }
-    
+
     // Extract projects
     const projects: { name: string; description: string; technologies: string }[] = [];
     const projRegex = /(?:projects?)[:\s]*([\s\S]*?)(?=experience|education|skills|certifications|achievements|$)/i;
     const projMatch = cleanText.match(projRegex);
-    
+
     if (projMatch && projMatch[1]) {
       const projText = projMatch[1];
       // Look for project names (usually capitalized or in bold patterns)
@@ -1392,7 +1392,7 @@ const Templates: React.FC = () => {
         .split(/[•·\n\r]{2,}/)
         .map(s => s.trim())
         .filter(s => s.length >= 10);
-      
+
       projItems.slice(0, 5).forEach(item => {
         const firstLine = item.split('\n')[0];
         projects.push({
@@ -1402,17 +1402,17 @@ const Templates: React.FC = () => {
         });
       });
     }
-    
-    return { 
-      fullName, 
-      email, 
-      phone, 
+
+    return {
+      fullName,
+      email,
+      phone,
       linkedin,
       location,
       jobTitle,
-      summary, 
-      skills: uniqueSkills, 
-      experiences, 
+      summary,
+      skills: uniqueSkills,
+      experiences,
       educations,
       achievements,
       projects
@@ -1422,90 +1422,65 @@ const Templates: React.FC = () => {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
+
     setIsUploading(true);
     setUploadError(null);
-    
+
     try {
       let text = '';
-      
-      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-        // Use pdfjs-dist for proper PDF text extraction
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        
-        let fullText = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items
-            .map((item: any) => item.str)
-            .join(' ');
-          fullText += pageText + '\n';
-        }
-        text = fullText;
-      } else if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
-        text = await file.text();
-      } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.name.endsWith('.docx')) {
-        // For DOCX - extract XML content which contains text
-        const arrayBuffer = await file.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        
-        // DOCX is a ZIP file, look for text in document.xml
-        let docxText = '';
-        const textDecoder = new TextDecoder('utf-8');
-        const fullContent = textDecoder.decode(uint8Array);
-        
-        // Extract text between XML tags
-        const textMatches = fullContent.match(/<w:t[^>]*>([^<]+)<\/w:t>/g);
-        if (textMatches) {
-          docxText = textMatches
-            .map(match => match.replace(/<[^>]+>/g, ''))
-            .join(' ');
-        }
-        
-        // Fallback: extract readable ASCII
-        if (!docxText || docxText.length < 50) {
-          docxText = '';
-          for (let i = 0; i < uint8Array.length; i++) {
-            if (uint8Array[i] >= 32 && uint8Array[i] <= 126) {
-              docxText += String.fromCharCode(uint8Array[i]);
-            } else if (uint8Array[i] === 10 || uint8Array[i] === 13) {
-              docxText += '\n';
-            }
-          }
-        }
-        text = docxText;
-      } else {
-        throw new Error('Please upload a PDF, DOCX, or TXT file');
+
+      // Use server-side extraction for better reliability
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      console.log('Sending file for server-side extraction...');
+
+      const extractResponse = await fetch(`${apiUrl}/ai/extract-text`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!extractResponse.ok) {
+        const errData = await extractResponse.json();
+        throw new Error(errData.error || 'Failed to extract text from file');
       }
-      
+
+      const extractResult = await extractResponse.json();
+      text = extractResult.text;
+
       console.log('Extracted text:', text.substring(0, 500)); // Debug log
-      
+
       if (text.length < 50) {
         throw new Error('Could not extract text from file. Please try a TXT file for best results.');
       }
-      
+
       // Use AI to parse the resume
       console.log('Sending to AI for parsing...');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      // apiUrl already declared above
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Not authorized, no token');
+      }
+
       const response = await fetch(`${apiUrl}/ai/parse-resume`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ text }),
       });
-      
+
       const result = await response.json();
-      
+
       if (!result.success) {
         throw new Error(result.message || 'AI parsing failed');
       }
-      
+
       const parsed = result.data;
       console.log('AI Parsed data:', parsed); // Debug log
-      
+
       // Store parsed data in localStorage for Builder to load
       const uploadedData = {
         personalInfo: {
@@ -1524,12 +1499,12 @@ const Templates: React.FC = () => {
         projects: parsed.projects,
         timestamp: Date.now()
       };
-      
+
       localStorage.setItem('uploadedResumeData', JSON.stringify(uploadedData));
-      
+
       setShowModal(false);
       navigate(`/builder?template=${selectedTemplateId}&uploaded=true`);
-      
+
     } catch (error: any) {
       console.error('Upload error:', error);
       setUploadError(error.message || 'Failed to parse resume. Please try again.');
@@ -1585,11 +1560,10 @@ const Templates: React.FC = () => {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    selectedCategory === cat.id
-                      ? 'bg-primary text-white shadow-lg'
-                      : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'
-                  }`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedCategory === cat.id
+                    ? 'bg-primary text-white shadow-lg'
+                    : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700'
+                    }`}
                 >
                   <Icon className="w-4 h-4" />
                   {cat.name}
@@ -1617,7 +1591,7 @@ const Templates: React.FC = () => {
                     <div className="aspect-[8.5/11] bg-white overflow-hidden">
                       <TemplateComponent />
                     </div>
-                    
+
                     {/* Template Info */}
                     <div className="p-4 border-t dark:border-slate-700">
                       <h3 className="font-semibold text-gray-900 dark:text-white text-lg">{template.name}</h3>
@@ -1625,9 +1599,8 @@ const Templates: React.FC = () => {
                     </div>
 
                     {/* Hover Overlay */}
-                    <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-center transition-opacity duration-300 ${
-                      hoveredTemplate === template.id ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                    }`}>
+                    <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-center transition-opacity duration-300 ${hoveredTemplate === template.id ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                      }`}>
                       <Button
                         onClick={() => handleUseTemplate(template.id)}
                         className="bg-primary hover:bg-primary/90 text-white px-8 py-3 text-lg rounded-lg"
@@ -1682,7 +1655,7 @@ const Templates: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="text-center text-xl">How would you like to start?</DialogTitle>
           </DialogHeader>
-          
+
           <div className="grid gap-3 py-4">
             {/* Create New Option */}
             <button
