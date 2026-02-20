@@ -325,6 +325,108 @@ const Index: React.FC = () => {
         </div>
       </section>
 
+      {/* Agency Section */}
+      <section className="py-20 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <div className="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-4 py-2 rounded-full text-sm font-medium mb-6">
+                <Users className="w-4 h-4" />
+                <span>For Recruitment Agencies</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-6">
+                Streamline your hiring process with our B2B Agency Portal
+              </h2>
+              <p className="text-lg text-slate-600 dark:text-slate-300 mb-8 leading-relaxed">
+                Manage multiple candidates, analyze resumes in bulk against job descriptions, and track application statuses all in one place. Perfect for staffing agencies and HR teams.
+              </p>
+
+              <div className="space-y-4 mb-8">
+                {[
+                  "Bulk Resume Parsing & Analysis",
+                  "Job Description Matching",
+                  "Candidate Pipeline Management",
+                  "White-label Branding Options"
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-slate-700 dark:text-slate-200">{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                size="lg"
+                onClick={() => navigate('/agency-dashboard')}
+                className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 px-8 py-6 text-lg rounded-xl shadow-lg"
+              >
+                Access Agency Dashboard
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 relative z-10">
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100 dark:border-slate-700">
+                  <div>
+                    <h3 className="font-bold text-lg">Agency Dashboard</h3>
+                    <p className="text-sm text-slate-500">Overview</p>
+                  </div>
+                  <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded font-medium">Active</div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl">
+                    <p className="text-xs text-slate-500 mb-1">Total Candidates</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">1,248</p>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl">
+                    <p className="text-xs text-slate-500 mb-1">Active Jobs</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">24</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 border border-slate-100 dark:border-slate-700 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-xs font-bold text-blue-700">JS</div>
+                      <div>
+                        <p className="text-sm font-medium">Jessica Smith</p>
+                        <p className="text-xs text-slate-500">Frontend Dev</p>
+                      </div>
+                    </div>
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">92% Match</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 border border-slate-100 dark:border-slate-700 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-xs font-bold text-purple-700">MC</div>
+                      <div>
+                        <p className="text-sm font-medium">Michael Chen</p>
+                        <p className="text-xs text-slate-500">DevOps</p>
+                      </div>
+                    </div>
+                    <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">88% Match</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Decorative elements */}
+              <div className="absolute top-10 -right-10 w-24 h-24 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+              <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="container mx-auto px-4 text-center">

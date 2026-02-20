@@ -165,12 +165,7 @@ const Payment = () => {
                                     <span>₹499.00</span>
                                 </div>
                             </CardContent>
-                            <CardFooter className="bg-background/50 border-t border-border/50 p-4">
-                                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                                    <ShieldCheck className="w-4 h-4" />
-                                    <span>Secure Payment via Stripe</span>
-                                </div>
-                            </CardFooter>
+
                         </Card>
                     </motion.div>
 
@@ -236,7 +231,7 @@ const Payment = () => {
                                                 // Verify payment logic (simulated for UPI)
                                                 toast.success('Payment verified! Premium features unlocked.');
                                                 localStorage.setItem('isPremium', 'true');
-                                                setTimeout(() => navigate('/ats-checker'), 2000);
+                                                setTimeout(() => navigate('/bulk-analyze'), 2000);
                                             }}
                                         >
                                             I have completed the payment

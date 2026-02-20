@@ -16,6 +16,8 @@ import About from "./pages/About";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import AgencyDashboard from "./pages/AgencyDashboard";
+import BulkResumeAnalyzer from "./pages/BulkResumeAnalyzer";
 import Profile from "./pages/Profile";
 import Tips from "./pages/Tips";
 import NotFound from "./pages/NotFound";
@@ -41,6 +43,22 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/agency-dashboard"
+                element={
+                  <ProtectedRoute>
+                    <AgencyDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bulk-analyze"
+                element={
+                  <ProtectedRoute>
+                    <BulkResumeAnalyzer />
                   </ProtectedRoute>
                 }
               />
